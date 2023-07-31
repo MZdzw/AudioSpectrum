@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Microcontroller - STLink-V3",
+            "cwd": "${workspaceFolder}",        //Path from where commands are executed
+            "type": "cortex-debug",             //Debug 
+            "executable": "${command:cmake.launchTargetPath}", //or fixed file path: build/project-name.elf
+            "request": "launch",                //Use "attach" to connect to target w/o elf download
+            "servertype": "stlink",             //Use stlink setup of cortex-M debug
+            "device": "STM32F401CCU6",            //MCU used
+            "interface": "swd",                 //Interface setup
+            "serialNumber": "",                 //Set ST-Link ID if you use multiple at the same time
+            "runToEntryPoint": "main",          //Run to main and stop there
+            "svdFile": "${workspaceFolder}/STM32F401.svd",         //SVD file to see reisters
+            "v1": false,
+            "showDevDebugOutput": "both",
+
+            /* Will get automatically detected if STM32CubeIDE is installed to default directory
+            or it can be manually provided if necessary.. */
+            // "serverpath": "/home/marzd/STM32MPU/STM32CubeProgrammer/bin/ST-LINK_gdbserver",
+            "armToolchainPath": "/usr/bin/",
+            // "stm32cubeprogrammer": "/home/marzd/STM32MPU/STM32CubeProgrammer/bin/STM32_Programmer_CLI",
+            // "gdbPath": "/home/marzd/STM32MPU/STM32CubeProgrammer/bin",
+        }
+    ]
+}
