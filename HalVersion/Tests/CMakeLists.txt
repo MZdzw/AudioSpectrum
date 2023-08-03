@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(AudioSpectrum_Tests)
+# project(AudioSpectrum_Tests)
 
-set(TESTED_MODULES ../Core/Src/TestTemplate.c)
+set(TEST_FILES ${CMAKE_CURRENT_SOURCE_DIR}/Test_SpiBuffer.c)
 
-set(TEST_FILES ${CMAKE_CURRENT_SOURCE_DIR}/TestTemplate.c)
+set(TEST_PRODUCTION_FILES ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Src/spiBuffer.c)
 
 set(UNITY_INCLUDES
         unity/core/
@@ -13,8 +13,16 @@ set(UNITY_INCLUDES
 
 add_subdirectory(unity)
 
-add_executable(AudioSpectrum_Tests main.c ${TEST_FILES})
-target_link_libraries(AudioSpectrum_Tests PRIVATE unity)
-target_include_directories(AudioSpectrum_Tests PRIVATE ../Core/Inc/)
+add_executable(Test_SpiBuffer main.c ${TEST_FILES} ${TEST_PRODUCTION_FILES})
 
-add_test(NAME AudioSpectrum COMMAND AudioSpectrum_Tests)
+#to add condition macro for testing purposes
+set_source_files_properties(
+    ${TEST_PRODUCTION_FILES}
+    PROPERTIES
+    COMPILE_FLAGS "-D TESTING"
+)
+
+target_link_libraries(Test_SpiBuffer PRIVATE unity)
+target_include_directories(Test_SpiBuffer PRIVATE ../Core/Inc/)
+
+add_test(NAME spiBuffer COMMAND Test_SpiBuffer)

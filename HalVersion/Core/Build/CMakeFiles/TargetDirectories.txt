@@ -1,0 +1,3 @@
+/home/marzd/Documents/Projects/stm32/AudioSpectrum/HalVersion/Core/Build/CMakeFiles/Project.dir
+/home/marzd/Documents/Projects/stm32/AudioSpectrum/HalVersion/Core/Build/CMakeFiles/edit_cache.dir
+/home/marzd/Documents/Projects/stm32/AudioSpectrum/HalVersion/Core/Build/CMakeFiles/rebuild_cache.dir

@@ -1,18 +1,18 @@
 #include "unity.h"
 
-// void setUp (void) {} /* Is run before every test, put unit init calls here. */
-// void tearDown (void) {} /* Is run after every test, put unit clean-up calls here. */
-
-// void test_template(void)
-// {
-    
-// }
-extern void test_template(void);
+extern void test_ArrayInitializedWithZeros(void);
+extern void test_ReadValueStatusAfterInitialize(void);
+extern void test_GettingSameValueAsSet(void);
+extern void test_SetValueToBufferOutOfRangeDoesNothing(void);
+extern void test_SetValueToBufferWithinRangeSuccess(void);
+extern void test_TryingToGetValueOutOfArrayRange(void);
+extern void test_TryingToGetValueWithinArrayRange(void);
 
 int main(void)
 {
     UNITY_BEGIN();
-    RUN_TEST(test_template);
+    RUN_TEST(test_ArrayInitializedWithZeros);
+    RUN_TEST(test_GettingSameValueAsSet);
 
     return UNITY_END();
 }

@@ -25,6 +25,8 @@ set(LINKER_SCRIPT ${PROJ_PATH}/STM32F401CCUX_FLASH.ld)
 set(EXECUTABLE ${CMAKE_PROJECT_NAME})
 
 set(HAL_DRIVERS 
+        ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c
+        ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c
         ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c
         ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c
         ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c
@@ -38,6 +40,10 @@ set(HAL_DRIVERS
         ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c
         ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c
         ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c
+        ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.c
+        ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c
+        ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c
+        ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_adc.c
 )
 
 set(INCLUDES
@@ -59,6 +65,12 @@ set(STM32_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/Src/stm32f4xx_hal_msp.c
 
         ${CMAKE_CURRENT_SOURCE_DIR}/Src/gpio.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/Src/adc.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/Src/dma.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/Src/spi.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/Src/tim.c
+
+        ${CMAKE_CURRENT_SOURCE_DIR}/Src/spiBuffer.c
 
         ${HAL_DRIVERS}
 
