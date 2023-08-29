@@ -1,0 +1,23 @@
+GEM
+  remote: http://rubygems.org/
+  specs:
+    constructor (2.0.0)
+    diy (1.1.2)
+      constructor (>= 1.0.0)
+    minitest (5.19.0)
+    rake (13.0.6)
+    require_all (3.0.0)
+
+PLATFORMS
+  x86_64-linux
+
+DEPENDENCIES
+  bundler
+  constructor
+  diy
+  minitest
+  rake
+  require_all
+
+BUNDLED WITH
+   2.3.5

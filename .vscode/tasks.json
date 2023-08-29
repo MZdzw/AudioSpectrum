@@ -2,13 +2,13 @@
 	"version": "2.0.0",
 	"tasks": [
         {
+            "options": {
+                "cwd": "${workspaceFolder}/HalVersion"
+            },
             "type": "cppbuild",
             "label": "Build project",
             "command": "cmake",
             "args": ["--build", "${command:cmake.buildDirectory}", "-j", "8"],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
             "problemMatcher": ["$gcc"],
             "group": {
                 "kind": "build",
@@ -21,7 +21,7 @@
             "command": "cmake",
             "args": ["--build", "${command:cmake.buildDirectory}", "--clean-first", "-v", "-j", "8"],
             "options": {
-                "cwd": "${workspaceFolder}"
+                "cwd": "${workspaceFolder}/HalVersion"
             },
             "problemMatcher": ["$gcc"],
         },
@@ -31,7 +31,7 @@
             "command": "cmake",
             "args": ["--build", "${command:cmake.buildDirectory}", "--target", "clean"],
             "options": {
-                "cwd": "${workspaceFolder}"
+                "cwd": "${workspaceFolder}/HalVersion"
             },
             "problemMatcher": []
         },
@@ -46,7 +46,7 @@
                 "-hardRst"
             ],
             "options": {
-                "cwd": "${workspaceFolder}"
+                "cwd": "${workspaceFolder}/HalVersion"
             },
             "problemMatcher": []
         },
@@ -62,7 +62,7 @@
                 "-hardRst"
             ],
             "options": {
-                "cwd": "${workspaceFolder}"
+                "cwd": "${workspaceFolder}/HalVersion"
             },
             "problemMatcher": []
         },
@@ -74,7 +74,7 @@
                 "--list",
             ],
             "options": {
-                "cwd": "${workspaceFolder}"
+                "cwd": "${workspaceFolder}/HalVersion"
             },
             "problemMatcher": []
         },

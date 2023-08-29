@@ -1,0 +1,47 @@
+#include "unity.h"
+
+extern void test_ObjectNotNullPtr(void);
+extern void test_DiodeColorsArrayClearAfterInit(void);
+extern void test_SettingAndGettingTheSameValue(void);
+extern void test_DeviceBufferNotNullAfterInit(void);
+extern void test_DeviceBufferFilledCorectly(void);
+extern void test_DeviceBufferFirstElementFilledCorectly(void);
+extern void test_DeviceBufferLastElementFilledCorectly(void);
+extern void Test_CheckIfSectorsAreWellInitialized(void);
+extern void Test_CheckIfSectorRemoveWorks(void);
+extern void Test_CheckIfSectorRemoveOfNotUsedSectorFails(void);
+extern void Test_CheckRemoveDefaultSectorAndThenAddTwoNoOverlapping(void);
+extern void Test_CheckOverlappingSectors(void);
+extern void Test_CreateSectorOnEdge(void);
+extern void Test_CreateSectorOnEdgeAndAddNonOverlappingSectors(void);
+extern void Test_CreateSectorOnEdgeAndAddAnotherSectorOnEdge(void);
+extern void Test_CreateSectorAndAddSectorInsideAndAddSectorOutside(void);
+extern void Test_CreateSectorOutOfRange(void);
+extern void Test_CreateSectorWithDiodesOfMinusIndexes(void);
+extern void test_SettingHSVSetsRGBCorrectly(void);
+
+int main(void)
+{
+    UNITY_BEGIN();
+    RUN_TEST(test_ObjectNotNullPtr);
+    RUN_TEST(test_DiodeColorsArrayClearAfterInit);
+    RUN_TEST(test_SettingAndGettingTheSameValue);
+    RUN_TEST(test_DeviceBufferNotNullAfterInit);
+    RUN_TEST(test_DeviceBufferFilledCorectly);
+    RUN_TEST(test_DeviceBufferFirstElementFilledCorectly);
+    RUN_TEST(test_DeviceBufferLastElementFilledCorectly);
+    RUN_TEST(Test_CheckIfSectorsAreWellInitialized);
+    RUN_TEST(Test_CheckIfSectorRemoveWorks);
+    RUN_TEST(Test_CheckIfSectorRemoveOfNotUsedSectorFails);
+    RUN_TEST(Test_CheckRemoveDefaultSectorAndThenAddTwoNoOverlapping);
+    RUN_TEST(Test_CheckOverlappingSectors);
+    RUN_TEST(Test_CreateSectorOnEdge);
+    RUN_TEST(Test_CreateSectorOnEdgeAndAddNonOverlappingSectors);   
+    RUN_TEST(Test_CreateSectorOnEdgeAndAddAnotherSectorOnEdge);
+    RUN_TEST(Test_CreateSectorAndAddSectorInsideAndAddSectorOutside);
+    RUN_TEST(Test_CreateSectorOutOfRange);
+    RUN_TEST(Test_CreateSectorWithDiodesOfMinusIndexes);
+    RUN_TEST(test_SettingHSVSetsRGBCorrectly);
+
+    return UNITY_END();
+}

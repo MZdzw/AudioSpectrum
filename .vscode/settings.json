@@ -2,6 +2,7 @@
     "C_Cpp.errorSquiggles": "disabled",
     "files.associations": {
         "stm32f401xc.h": "c",
+        "thread": "c"
     },
     "cmake.sourceDirectory": "/home/marzd/Documents/Projects/stm32/AudioSpectrum/HalVersion"
 }

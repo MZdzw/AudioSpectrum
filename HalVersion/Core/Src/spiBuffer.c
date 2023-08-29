@@ -5,10 +5,11 @@
 typedef struct SpiWs2812B_t
 {
     uint8_t spiBuffer[WS2812B_DIODES * 
-                      SPI_BYTES_PER_WS2812B_BIT * 8 * 3];
+                      SPI_BYTES_PER_WS2812B_BIT * 8 * 3 +
+                      144];
 } SpiWs2812B_t;
 
-static SpiWs2812B_t obj = {0, 0};
+static SpiWs2812B_t obj = {0};
 
 SpiWs2812B_t* initObject(void)
 {

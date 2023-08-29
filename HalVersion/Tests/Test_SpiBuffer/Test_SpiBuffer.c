@@ -7,7 +7,7 @@
 SpiWs2812B_t* deviceDriver;
 
 uint8_t expectedArray[WS2812B_DIODES * 
-                      SPI_BYTES_PER_WS2812B_BIT * 8 * 3];
+                      SPI_BYTES_PER_WS2812B_BIT * 8 * 3 + 144];
 /* Is run before every test, put unit init calls here. */
 void setUp (void) 
 {

@@ -26,7 +26,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "animations.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,7 +57,14 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+static void turnOnFPU(void)
+{
+	SCB->CPACR |= ((3 << 10 * 2)|(3 << 11 * 2));
+}
+uint32_t ledCounter;
+uint32_t animationSpeedCnt;
+LedStrip_t* ledStrip;
+Animation animation;
 /* USER CODE END 0 */
 
 /**
@@ -83,6 +90,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
+  turnOnFPU();
 
   /* USER CODE END SysInit */
 
@@ -95,7 +103,20 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
+  ledCounter = 0;
+  animationSpeedCnt = 0;
+  ledStrip = LedStrip_initObject();
+  RemoveSector(GetDriver(ledStrip), 0);
+  SetSector(GetDriver(ledStrip), 0, 0, 16);
+  SetSector(GetDriver(ledStrip), 1, 18, WS2812B_DIODES - 1);
+  SetAnimationSpeed(GetAnimations(ledStrip), 0, 5);
+  SetAnimationSpeed(GetAnimations(ledStrip), 1, 8);
+  SetAnimationFunPtr(GetAnimations(ledStrip), 1);
 
+  HAL_TIM_Base_Start_IT(&htim2);
+  // HAL_TIM_Base_Start(&htim3);
+  HAL_TIM_Base_Start_IT(&htim4);
+  // HAL_ADC_Start_DMA(&hadc1, AD_RES, 512); // You have to start ADC with DMA
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -105,8 +126,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-	HAL_Delay(5000);
   }
   /* USER CODE END 3 */
 }
@@ -157,6 +176,40 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
+{
+	if (htim->Instance == TIM2)
+	{
+		if (ledCounter >= 120)
+		{
+			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+			ledCounter = 0;
+		}
+    //refresh diodes with 120 Hz
+    SendDeviceBuffer(GetDriver(ledStrip));
+		ledCounter++;
+	}
+	else if (htim->Instance == TIM4)
+	{
+		if ((animationSpeedCnt % GetAnimationSpeed(GetAnimations(ledStrip), 0)) == 0)
+		{
+			// animation
+      animation = GetAnimationFunPtr(GetAnimations(ledStrip), 0);
+      animation(GetDriver(ledStrip), 0);
+		}
+    if ((animationSpeedCnt % GetAnimationSpeed(GetAnimations(ledStrip), 1)) == 0)
+    {
+      animation = GetAnimationFunPtr(GetAnimations(ledStrip), 1);
+      animation(GetDriver(ledStrip), 1);
+    }
+
+    if (animationSpeedCnt >= 300)
+    {
+      animationSpeedCnt = 0;
+    }
+		animationSpeedCnt++;
+	}
+}
 
 /* USER CODE END 4 */
 
