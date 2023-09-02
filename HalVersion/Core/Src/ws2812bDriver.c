@@ -9,29 +9,15 @@
 #include "ws2812bDriver.h"
 
 // Private object members
-
-#ifndef TESTING
-typedef struct Ws2812b_RGB_t
-{
-    uint8_t red;
-    uint8_t green;
-    uint8_t blue;
-} Ws2812b_RGB_t;
-
-// typedef struct Ws2812b_Sector_t
-// {
-//     unsigned int startDiode;
-//     unsigned int endDiode;
-//     bool isUsed;
-// } Ws2812b_Sector_t;
-#else
+#ifdef TESTING
 SPI_HandleTypeDef hspi1;
 #endif
+
 
 typedef struct Ws2812b_Driver_t
 {
     SpiWs2812B_t* deviceBuffer;
-    Ws2812b_RGB_t diodeColors[WS2812B_DIODES];
+    Ws2812b_Color_t diodeColors[WS2812B_DIODES];
     Ws2812b_Sector_t sectors[MAX_SECTORS];
 } Ws2812b_Driver_t;
 
@@ -156,9 +142,13 @@ bool RemoveSector(Ws2812b_Driver_t* this, const uint32_t id)
     return true;
 }
 
-static inline void SetDiodeColor(Ws2812b_Driver_t* this, uint32_t id, Ws2812b_RGB_t color)
+static inline void SetDiodeColor(Ws2812b_Driver_t* this, uint32_t id, Ws2812b_RGB_t* colorRGB, Ws2812b_HSV_t* colorHSV, bool isHSVSet)
 {
-    this->diodeColors[id] = color;
+    this->diodeColors[id].rgb = *colorRGB;
+    if (isHSVSet)
+    {
+        this->diodeColors[id].hsv = *colorHSV;
+    }
 }
 
 static inline void SetColorToDeviceBuffer(Ws2812b_Driver_t* this, uint32_t id, Ws2812b_Color_e color, uint8_t colorVal)
@@ -182,21 +172,29 @@ static inline void SetColorToDeviceBuffer(Ws2812b_Driver_t* this, uint32_t id, W
 
 void SetDiodeColorRGB(Ws2812b_Driver_t* this, uint32_t id, uint8_t red, uint8_t green, uint8_t blue)
 {
-    SetDiodeColor(this, id, (Ws2812b_RGB_t){.red = red, .green = green, .blue = blue});
+    SetDiodeColor(this, id, &(Ws2812b_RGB_t){.red = red, .green = green, .blue = blue},
+                  &(Ws2812b_HSV_t){0}, false);
+    this->diodeColors[id].lastColor = RGB;
 }
 
 void SetDiodeColorHSV(Ws2812b_Driver_t* this, uint32_t id, uint16_t hue, uint8_t saturation, uint8_t value)
 {
     Ws2812b_RGB_t colorRGB = {0};
+    Ws2812b_HSV_t colorHSV = {0};
     if(hue > 360 || hue < 0 || saturation > 100 || saturation < 0 || value > 100 || value < 0)
     {
-        SetDiodeColor(this, id, colorRGB);
+        SetDiodeColor(this, id, &colorRGB, &colorHSV, false);
         return;
     }
+    colorHSV.hue = hue;
+    colorHSV.saturation = saturation;
+    colorHSV.value = value;
+
+    // HSV to RGB calculation
     float s = saturation / 100.0f;
     float v = value / 100.0f;
     float C = s * v;
-    float X = C * (1 - abs((int)(fmod(hue / 60.0f, 2) - 1)));
+    float X = C * (1 - fabs((fmod(hue / 60.0f, 2) - 1)));
     float m = v - C;
     float r, g, b;
     if(hue >= 0 && hue < 60)
@@ -236,22 +234,31 @@ void SetDiodeColorHSV(Ws2812b_Driver_t* this, uint32_t id, uint16_t hue, uint8_t
         b = X;
     }
 
-    colorRGB.red = (r + m) * 255;
-    colorRGB.green = (g + m) * 255;
-    colorRGB.blue = (b + m) * 255;
+    colorRGB.red = round((r + m) * 255);
+    colorRGB.green = round((g + m) * 255);
+    colorRGB.blue = round((b + m) * 255);
 
-    SetDiodeColor(this, id, colorRGB);
+    SetDiodeColor(this, id, &colorRGB, &colorHSV, true);
+    this->diodeColors[id].lastColor = HSV;
 }
 
 void GetDiodeColorRGB(Ws2812b_Driver_t* this, uint32_t id, uint8_t* red, uint8_t* green, uint8_t* blue)
 {
-    *red = this->diodeColors[id].red;
-    *green = this->diodeColors[id].green;
-    *blue = this->diodeColors[id].blue;
+    *red = this->diodeColors[id].rgb.red;
+    *green = this->diodeColors[id].rgb.green;
+    *blue = this->diodeColors[id].rgb.blue;
 }
 
 void GetDiodeColorHSV(Ws2812b_Driver_t* this, uint32_t id, uint16_t* hue, uint8_t* saturation, uint8_t* value)
 {
+    if (this->diodeColors[id].lastColor == HSV)
+    {
+        *hue = this->diodeColors[id].hsv.hue;
+        *saturation = this->diodeColors[id].hsv.saturation;
+        *value = this->diodeColors[id].hsv.value;
+        return;
+    }
+
     uint8_t r, g, b;
     GetDiodeColorRGB(this, id, &r, &g, &b);
     uint8_t rgbMin, rgbMax;
@@ -259,7 +266,7 @@ void GetDiodeColorHSV(Ws2812b_Driver_t* this, uint32_t id, uint16_t* hue, uint8_
     rgbMin = r < g ? (r < b ? r : b) : (g < b ? g : b);
     rgbMax = r > g ? (r > b ? r : b) : (g > b ? g : b);
     
-    *value = rgbMax;
+    *value = round(100 * ((float)rgbMax / 255));
     if (*value == 0)
     {
         *hue = 0;
@@ -267,19 +274,35 @@ void GetDiodeColorHSV(Ws2812b_Driver_t* this, uint32_t id, uint16_t* hue, uint8_
         return;
     }
 
-    *saturation = 255 * (unsigned int)(rgbMax - rgbMin) / *value;
+    *saturation = round(100 * (float)(rgbMax - rgbMin) / rgbMax);
     if (*saturation == 0)
     {
         *hue = 0;
         return;
     }
 
+    float hueF;
     if (rgbMax == r)
-        *hue = 0 + 43 * (g - b) / (rgbMax - rgbMin);
+    {
+        hueF = ((float)g - b) / (rgbMax - rgbMin);
+    }
     else if (rgbMax == g)
-        *hue = 85 + 43 * (b - r) / (rgbMax - rgbMin);
+    {
+        hueF = 2.0f + ((float)b - r) / (rgbMax - rgbMin);
+    }
     else
-        *hue = 171 + 43 * (r - g) / (rgbMax - rgbMin);
+    {
+        hueF = 4.0f + ((float)r - g) / (rgbMax - rgbMin);
+    }
+
+    if (hueF < 0)
+    {
+        *hue = (uint16_t)(round((hueF * 60)) + 360);    
+    }
+    else
+    {
+        *hue = (uint16_t)round((hueF * 60)); 
+    }
 }
 
 void SetActiveSectors(Ws2812b_Driver_t* this, unsigned int val)
@@ -336,10 +359,8 @@ Ws2812b_Sector_t* GetSectors(Ws2812b_Driver_t* this)
     return this->sectors;
 }
 
-#ifdef TESTING
-Ws2812b_RGB_t* GetDiodeColorsArray(Ws2812b_Driver_t* this)
+
+Ws2812b_Color_t* GetDiodeColorsArray(Ws2812b_Driver_t* this)
 {
     return this->diodeColors;
 }
-
-#endif
