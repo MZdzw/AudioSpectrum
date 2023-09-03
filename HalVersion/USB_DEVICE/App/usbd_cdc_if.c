@@ -22,7 +22,7 @@
 #include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN INCLUDE */
-
+#include "communication.h"
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,8 +49,8 @@
   */
 
 /* USER CODE BEGIN PRIVATE_TYPES */
-extern volatile uint8_t bufferUSB[64];
-extern volatile uint8_t flagUSB;
+// extern volatile uint8_t bufferUSB[64];
+// extern volatile uint8_t flagUSB;
 /* USER CODE END PRIVATE_TYPES */
 
 /**
@@ -95,7 +95,7 @@ uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
-
+static Communication_t* usb;
 /* USER CODE END PRIVATE_VARIABLES */
 
 /**
@@ -156,6 +156,8 @@ static int8_t CDC_Init_FS(void)
   /* Set Application Buffers */
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
+
+  usb = Communication_InitObject();
   return (USBD_OK);
   /* USER CODE END 3 */
 }
@@ -263,10 +265,15 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
   uint8_t len = (uint8_t)*Len;
-  memset(bufferUSB, '\0', 64);
-  memcpy(bufferUSB, Buf, len);
+  // memset(bufferUSB, '\0', 64);
+  // memcpy(bufferUSB, Buf, len);
+  // memset(Buf, '\0', len);
+  // flagUSB = 1;
+
+  memset(GetRxBufferUSB(usb), '\0', 64);
+  memcpy(GetRxBufferUSB(usb), Buf, len);
   memset(Buf, '\0', len);
-  flagUSB = 1;
+  *(GetFlagUSBPtr(usb)) = 1;
 
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
