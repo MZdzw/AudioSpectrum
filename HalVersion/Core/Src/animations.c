@@ -50,15 +50,18 @@ static void Dimming(Ws2812b_Driver_t* driver, uint32_t sectorId)
 static void Rolling(Ws2812b_Driver_t* driver, uint32_t sectorId)
 {
     Ws2812b_Sector_t* sectors = GetSectors(driver);
-    uint16_t hue, tmpHue;
-    uint8_t saturation, value, tmpSaturation, tmpValue;
-    GetDiodeColorHSV(driver, sectors[sectorId].endDiode, &tmpHue, &tmpSaturation, &tmpValue);
+    uint8_t red, green, blue;
+    uint8_t tmpRed, tmpGreen, tmpBlue;
+    
+    // for rolling purpose RGB functions will be faster
+    // because they don't need to calculate anything
+    GetDiodeColorRGB(driver, sectors[sectorId].endDiode, &tmpRed, &tmpGreen, &tmpBlue);
     for (uint32_t i = sectors[sectorId].endDiode; i > sectors[sectorId].startDiode; i--)
     {
-        GetDiodeColorHSV(driver, i - 1, &hue, &saturation, &value);
-        SetDiodeColorHSV(driver, i, hue, saturation, value);
+        GetDiodeColorRGB(driver, i - 1, &red, &green, &blue);
+        SetDiodeColorRGB(driver, i, red, green, blue);
     }
-    SetDiodeColorHSV(driver, 0, tmpHue, tmpSaturation, tmpValue);
+    SetDiodeColorRGB(driver, sectors[sectorId].startDiode, tmpRed, tmpGreen, tmpBlue);
 }
 
 LedStrip_t* LedStrip_initObject(void)
@@ -108,6 +111,19 @@ void SetHSVColorForSector(Ws2812b_Driver_t* this, uint32_t id, uint16_t hue, uin
     {
         SetDiodeColorHSV(this, i, hue, saturation, value);
     } 
+}
+
+void SetRainbowForSector(Ws2812b_Driver_t* this, uint32_t sectorID)
+{
+    Ws2812b_Sector_t sector = GetSectors(this)[sectorID];
+    uint32_t diodesNum = sector.endDiode - sector.startDiode;
+    uint16_t step = 360 / diodesNum;
+    uint32_t cnt = 0;
+    for (unsigned int i = sector.startDiode; i < sector.endDiode; i++)
+    {
+        SetDiodeColorHSV(this, i, step * cnt, 100, 100);
+        cnt++;
+    }
 }
 
 void SetAnimation(LedStrip_t* this, Animation_e animationType, uint32_t id)

@@ -26,6 +26,7 @@ uint32_t GetAnimationSpeed(Animation_t* this, uint32_t id);
 void SetAnimationSpeed(Animation_t* this, uint32_t id, uint32_t speed);
 void SetAnimationFunPtr(Animation_t* this, uint32_t id);
 void SetHSVColorForSector(Ws2812b_Driver_t* this, uint32_t id, uint16_t hue, uint8_t saturation, uint8_t value);
+void SetRainbowForSector(Ws2812b_Driver_t* this, uint32_t sectorID);
 void SetAnimation(LedStrip_t* this, Animation_e animationType, uint32_t id);
 
 #ifdef TESTING

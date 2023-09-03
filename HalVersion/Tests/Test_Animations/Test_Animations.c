@@ -98,7 +98,7 @@ void Test_DimmingDescending(void)
 void Test_Rolling(void)
 {
     srand(time(NULL));
-    Ws2812b_HSV_t expectedColorHSV[WS2812B_DIODES] = {{0, 0, 0}};
+    Ws2812b_RGB_t expectedColorRGB[WS2812B_DIODES] = {{0, 0, 0}};
     // set initial color value on led strip
     uint16_t hue;
     uint8_t saturation;
@@ -109,26 +109,24 @@ void Test_Rolling(void)
         saturation = rand() % 101;
         value = rand() % 101;
         SetDiodeColorHSV(GetDriver(ledStrip), i, hue, saturation, value);
-        expectedColorHSV[i + 1].hue = hue;
-        expectedColorHSV[i + 1].saturation = saturation;
-        expectedColorHSV[i + 1].value = value;
+        GetDiodeColorRGB(GetDriver(ledStrip), i, &(expectedColorRGB[i + 1].red),
+        &(expectedColorRGB[i + 1].green), &(expectedColorRGB[i + 1].blue));
     }
     hue = rand() % 361;
     saturation = rand() % 101;
     value = rand() % 101;
     SetDiodeColorHSV(GetDriver(ledStrip), WS2812B_DIODES - 1, hue, saturation, value);
-    expectedColorHSV[0].hue = hue;
-    expectedColorHSV[0].saturation = saturation;
-    expectedColorHSV[0].value = value;
+    GetDiodeColorRGB(GetDriver(ledStrip), WS2812B_DIODES - 1, &(expectedColorRGB[0].red),
+    &(expectedColorRGB[0].green), &(expectedColorRGB[0].blue));
     // at default we have only one sector (id equal 0)
     SetAnimation(ledStrip, ROLLING, 0);
     Animation animation = GetAnimationFunPtr(GetAnimations(ledStrip), 0);
     animation(GetDriver(ledStrip), 0);
     Ws2812b_Color_t* colorsArray = GetDiodeColorsArray(GetDriver(ledStrip));
-    Ws2812b_HSV_t actualHSVColorS[WS2812B_DIODES];
+    Ws2812b_RGB_t actualRGBColors[WS2812B_DIODES];
     for (unsigned int  i = 0; i < WS2812B_DIODES; i++)
     {
-        actualHSVColorS[i] = colorsArray[i].hsv;
+        actualRGBColors[i] = colorsArray[i].rgb;
     }
-    TEST_ASSERT_EQUAL_MEMORY_ARRAY(expectedColorHSV, actualHSVColorS, sizeof(Ws2812b_HSV_t), WS2812B_DIODES);
+    TEST_ASSERT_EQUAL_MEMORY_ARRAY(expectedColorRGB, actualRGBColors, sizeof(Ws2812b_RGB_t), WS2812B_DIODES);
 }
