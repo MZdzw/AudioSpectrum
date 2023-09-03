@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
-set(PROJ_PATH                       ${CMAKE_CURRENT_SOURCE_DIR}/..)
+set(PROJ_PATH                       ${CMAKE_SOURCE_DIR})
 
 message("Build type: "              ${CMAKE_BUILD_TYPE})
 
@@ -44,7 +44,24 @@ set(HAL_DRIVERS
         ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c
         ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c
         ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_adc.c
+        ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pcd.h
+        ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pcd_ex.h
+        ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_ll_usb.h
+        ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.c
+        ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.c
+        ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.c
 )
+
+set(USB_DRIVERS
+        ${PROJ_PATH}/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c
+        ${PROJ_PATH}/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c
+        ${PROJ_PATH}/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c
+        ${PROJ_PATH}/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c
+        ${PROJ_PATH}/USB_DEVICE/App/usbd_cdc_if.c
+        ${PROJ_PATH}/USB_DEVICE/App/usbd_desc.c
+        ${PROJ_PATH}/USB_DEVICE/App/usb_device.c
+        ${PROJ_PATH}/USB_DEVICE/Target/usbd_conf.c
+        )
 
 set(INCLUDES
         ${PROJ_PATH}/Drivers/CMSIS/Device/ST/STM32F4xx/Include/
@@ -52,6 +69,12 @@ set(INCLUDES
 
         ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Inc/
         ${PROJ_PATH}/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy/
+
+        # USB
+        ${PROJ_PATH}/USB_DEVICE/App/
+        ${PROJ_PATH}/USB_DEVICE/Target/
+        ${PROJ_PATH}/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc/
+        ${PROJ_PATH}/Middlewares/ST/STM32_USB_Device_Library/Core/Inc
 
         ${CMAKE_CURRENT_SOURCE_DIR}/Inc/ 
         )
@@ -75,6 +98,7 @@ set(STM32_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/Src/animations.c
 
         ${HAL_DRIVERS}
+        ${USB_DRIVERS}
 
         ${CMAKE_CURRENT_SOURCE_DIR}/Startup/startup_stm32f401ccux.s
         )
