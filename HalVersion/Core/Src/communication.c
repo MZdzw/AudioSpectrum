@@ -1,7 +1,5 @@
 #include "communication.h"
-
-// volatile uint8_t bufferUSB[64];
-// volatile uint8_t flagUSB;
+#include "string.h"
 
 typedef struct Communication_t
 {
@@ -12,7 +10,7 @@ typedef struct Communication_t
 
 } Communication_t;
 
-
+static uint8_t lookUpTableUSBLength[USB_PROPER_ACTIONS] = {14, 22, 21, 20, 18, 17, 14, 17, 18};
 
 static inline void SendUSB(Communication_t* this)
 {
@@ -28,6 +26,11 @@ Communication_t* Communication_InitObject(void)
     return &obj;
 }
 
+uint8_t* GetTxBufferUSB(Communication_t* this)
+{
+    return this->bufferTX;
+}
+
 uint8_t* GetRxBufferUSB(Communication_t* this)
 {
     return this->bufferRX;
@@ -38,6 +41,11 @@ uint8_t* GetFlagUSBPtr(Communication_t* this)
     return &(this->flagUSB);
 }
 
+uint32_t GetMsgLen(Communication_t* this)
+{
+    return this->msgLen;
+}
+
 void SendMsgUSB(Communication_t* this, const char* msg)
 {
     memcpy(this->bufferTX, msg, strlen(msg));
@@ -45,12 +53,28 @@ void SendMsgUSB(Communication_t* this, const char* msg)
     SendUSB(this);
 }
 
-void CheckReceiveUSB(Communication_t* this)
+bool CheckReceiveUSB(Communication_t* this)
 {
     if (this->flagUSB)
     {
-        //analyze received data
-
         this->flagUSB = 0;
+        return true;
     }
+    return false;
+}
+
+USBAction_e DecodeMsg(Communication_t* this)
+{
+    for (uint8_t i = 0; i < 6; i++)
+        if (this->bufferRX[i] != 0xAA)
+            return USB_BAD_PREFIX;
+
+    if (this->bufferRX[6] >= USB_BAD_PREFIX)
+        return this->bufferRX[6];
+
+    for (uint8_t i = lookUpTableUSBLength[this->bufferRX[6]] - 1; i > lookUpTableUSBLength[this->bufferRX[6]] - 7; i--)
+        if (this->bufferRX[i] != 0xAA)
+            return USB_BAD_APPENDIX;
+    
+    return this->bufferRX[6];
 }
