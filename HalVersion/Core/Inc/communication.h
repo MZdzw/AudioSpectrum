@@ -8,6 +8,7 @@
 #endif
 
 #define MAX_LENGTH 22
+#define UINT8_t_MAX 255
 
 typedef enum USBAction_e
 {
@@ -26,7 +27,45 @@ typedef enum USBAction_e
     //errors at the end
     USB_BAD_PREFIX,
     USB_BAD_APPENDIX,
+    USB_ERROR
 } USBAction_e;
+
+typedef struct USBRGB_t
+{
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+} USBRGB_t;
+
+typedef struct USBHSV_t
+{
+    uint16_t hue;
+    uint8_t saturation;
+    uint8_t value;
+} USBHSV_t;
+
+typedef struct USBDiodes_t
+{
+    uint32_t startDiode;
+    uint32_t endDiode;
+} USBDiodes_t;
+
+typedef struct USBMsg_t
+{
+    USBAction_e action;
+    union 
+    {
+        uint8_t sectorID;
+        uint32_t diodeID;
+    };
+    union 
+    {
+        USBRGB_t rgbColor;
+        USBHSV_t hsvColor;
+        uint32_t animationSpeed;
+    };
+    USBDiodes_t diodesRange;
+} USBMsg_t;
 
 typedef struct Communication_t Communication_t;
 
@@ -38,6 +77,6 @@ uint8_t* GetFlagUSBPtr(Communication_t* this);
 uint32_t GetMsgLen(Communication_t* this);
 void SendMsgUSB(Communication_t* this, const char* msg);
 bool CheckReceiveUSB(Communication_t* this);
-USBAction_e DecodeMsg(Communication_t* this);
+USBMsg_t DecodeMsg(Communication_t* this);
 
 #endif

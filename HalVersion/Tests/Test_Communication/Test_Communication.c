@@ -51,7 +51,7 @@ static void FillRxBuffer(uint8_t* buffer, USBAction_e action)
             buffer[8] = 0;      // diode ID
             buffer[9] = 0;      // diode ID
             buffer[10] = 4;     // diode ID (32 bits)
-            buffer[11] = 2;     // hue
+            buffer[11] = 1;     // hue
             buffer[12] = 100;   // hue (16 bits)
             buffer[13] = 50;    // saturation
             buffer[14] = 60;    // value
@@ -59,10 +59,10 @@ static void FillRxBuffer(uint8_t* buffer, USBAction_e action)
         case USB_SET_DIODE_COLOR_RGB:
             // inject diode nr 4 with RGB color
             buffer[6] = 3;      // command ID    
-            buffer[7] = 0;      // diode ID
+            buffer[7] = 1;      // diode ID
             buffer[8] = 0;      // diode ID
-            buffer[9] = 0;      // diode ID
-            buffer[10] = 4;     // diode ID (32 bits)
+            buffer[9] = 3;      // diode ID
+            buffer[10] = 8;     // diode ID (32 bits)
             buffer[11] = 200;   // red
             buffer[12] = 100;   // green
             buffer[13] = 130;   // blue
@@ -131,14 +131,14 @@ void Test_CheckAfterInitAllMembersAreZero(void)
 // Check decoding messages feature
 void Test_DecodingMessages(void)
 {
-    USBAction_e action;
+    USBMsg_t msg;
     uint8_t* injectedRxBuffer = GetRxBufferUSB(usb);
     InjectPreOrSufix(injectedRxBuffer, 0);
     FillRxBuffer(injectedRxBuffer, USB_REMOVE_SECTOR);
     InjectPreOrSufix(injectedRxBuffer, 8);
     
-    action = DecodeMsg(usb);
-    TEST_ASSERT_EQUAL_UINT8(USB_REMOVE_SECTOR, action);
+    msg = DecodeMsg(usb);
+    TEST_ASSERT_EQUAL_UINT8(USB_REMOVE_SECTOR, msg.action);
 
     memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);
 
@@ -146,8 +146,8 @@ void Test_DecodingMessages(void)
     FillRxBuffer(injectedRxBuffer, USB_ADD_SECTOR);
     InjectPreOrSufix(injectedRxBuffer, 16);
     
-    action = DecodeMsg(usb);
-    TEST_ASSERT_EQUAL_UINT8(USB_ADD_SECTOR, action);
+    msg = DecodeMsg(usb);
+    TEST_ASSERT_EQUAL_UINT8(USB_ADD_SECTOR, msg.action);
     
     memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);
 
@@ -155,8 +155,8 @@ void Test_DecodingMessages(void)
     FillRxBuffer(injectedRxBuffer, USB_SET_DIODE_COLOR_HSV);
     InjectPreOrSufix(injectedRxBuffer, 15);
 
-    action = DecodeMsg(usb);
-    TEST_ASSERT_EQUAL_UINT8(USB_SET_DIODE_COLOR_HSV, action);
+    msg = DecodeMsg(usb);
+    TEST_ASSERT_EQUAL_UINT8(USB_SET_DIODE_COLOR_HSV, msg.action);
 
     memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);
 
@@ -164,8 +164,8 @@ void Test_DecodingMessages(void)
     FillRxBuffer(injectedRxBuffer, USB_SET_DIODE_COLOR_RGB);
     InjectPreOrSufix(injectedRxBuffer, 14);
 
-    action = DecodeMsg(usb);
-    TEST_ASSERT_EQUAL_UINT8(USB_SET_DIODE_COLOR_RGB, action);
+    msg = DecodeMsg(usb);
+    TEST_ASSERT_EQUAL_UINT8(USB_SET_DIODE_COLOR_RGB, msg.action);
 
     memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);
 
@@ -173,8 +173,8 @@ void Test_DecodingMessages(void)
     FillRxBuffer(injectedRxBuffer, USB_SET_SECTOR_COLOR_HSV);
     InjectPreOrSufix(injectedRxBuffer, 12);
 
-    action = DecodeMsg(usb);
-    TEST_ASSERT_EQUAL_UINT8(USB_SET_SECTOR_COLOR_HSV, action);
+    msg = DecodeMsg(usb);
+    TEST_ASSERT_EQUAL_UINT8(USB_SET_SECTOR_COLOR_HSV, msg.action);
     
     memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);
 
@@ -182,8 +182,8 @@ void Test_DecodingMessages(void)
     FillRxBuffer(injectedRxBuffer, USB_SET_SECTOR_COLOR_RGB);
     InjectPreOrSufix(injectedRxBuffer, 11);
 
-    action = DecodeMsg(usb);
-    TEST_ASSERT_EQUAL_UINT8(USB_SET_SECTOR_COLOR_RGB, action);
+    msg = DecodeMsg(usb);
+    TEST_ASSERT_EQUAL_UINT8(USB_SET_SECTOR_COLOR_RGB, msg.action);
 
     memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);
 
@@ -191,8 +191,8 @@ void Test_DecodingMessages(void)
     FillRxBuffer(injectedRxBuffer, USB_SET_SECTOR_COLOR_RAINBOW);
     InjectPreOrSufix(injectedRxBuffer, 8);
 
-    action = DecodeMsg(usb);
-    TEST_ASSERT_EQUAL_UINT8(USB_SET_SECTOR_COLOR_RAINBOW, action);
+    msg = DecodeMsg(usb);
+    TEST_ASSERT_EQUAL_UINT8(USB_SET_SECTOR_COLOR_RAINBOW, msg.action);
 
     memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);
 
@@ -200,8 +200,8 @@ void Test_DecodingMessages(void)
     FillRxBuffer(injectedRxBuffer, USB_SET_SECTOR_SPAWN_DIODE_COLOR);
     InjectPreOrSufix(injectedRxBuffer, 11);
 
-    action = DecodeMsg(usb);
-    TEST_ASSERT_EQUAL_UINT8(USB_SET_SECTOR_SPAWN_DIODE_COLOR, action);
+    msg = DecodeMsg(usb);
+    TEST_ASSERT_EQUAL_UINT8(USB_SET_SECTOR_SPAWN_DIODE_COLOR, msg.action);
     
     memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);
 
@@ -209,7 +209,36 @@ void Test_DecodingMessages(void)
     FillRxBuffer(injectedRxBuffer, USB_SET_SECTOR_ANIMATION_SPEED);
     InjectPreOrSufix(injectedRxBuffer, 12);
 
-    action = DecodeMsg(usb);
-    TEST_ASSERT_EQUAL_UINT8(USB_SET_SECTOR_ANIMATION_SPEED, action);
+    msg = DecodeMsg(usb);
+    TEST_ASSERT_EQUAL_UINT8(USB_SET_SECTOR_ANIMATION_SPEED, msg.action);
 }
 
+// Check that decode USB_SET_DIODE_COLOR_HSV and USB_SET_DIODE_COLOR_RGB works as expected
+void Test_USBSetDiodeColorHSVAndRGB(void)
+{
+    USBMsg_t msg;
+    uint8_t* injectedRxBuffer = GetRxBufferUSB(usb);
+    InjectPreOrSufix(injectedRxBuffer, 0);
+    FillRxBuffer(injectedRxBuffer, USB_SET_DIODE_COLOR_HSV);
+    InjectPreOrSufix(injectedRxBuffer, 15);
+    
+    msg = DecodeMsg(usb);
+    TEST_ASSERT_EQUAL_UINT8(USB_SET_DIODE_COLOR_HSV, msg.action);
+    TEST_ASSERT_EQUAL_UINT32(4, msg.diodeID);
+    TEST_ASSERT_EQUAL_UINT16(356, msg.hsvColor.hue);
+    TEST_ASSERT_EQUAL_UINT8(50, msg.hsvColor.saturation);
+    TEST_ASSERT_EQUAL_UINT8(60, msg.hsvColor.value);
+
+    memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);
+
+    InjectPreOrSufix(injectedRxBuffer, 0);
+    FillRxBuffer(injectedRxBuffer, USB_SET_DIODE_COLOR_RGB);
+    InjectPreOrSufix(injectedRxBuffer, 14);
+    
+    msg = DecodeMsg(usb);
+    TEST_ASSERT_EQUAL_UINT8(USB_SET_DIODE_COLOR_RGB, msg.action);
+    TEST_ASSERT_EQUAL_UINT32(16777992, msg.diodeID);
+    TEST_ASSERT_EQUAL_UINT8(200, msg.rgbColor.red);
+    TEST_ASSERT_EQUAL_UINT8(100, msg.rgbColor.green);
+    TEST_ASSERT_EQUAL_UINT8(130, msg.rgbColor.blue);
+}

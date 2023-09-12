@@ -63,18 +63,60 @@ bool CheckReceiveUSB(Communication_t* this)
     return false;
 }
 
-USBAction_e DecodeMsg(Communication_t* this)
+USBMsg_t DecodeMsg(Communication_t* this)
 {
+    USBMsg_t msg = {.action = USB_ERROR};
     for (uint8_t i = 0; i < 6; i++)
         if (this->bufferRX[i] != 0xAA)
-            return USB_BAD_PREFIX;
+        {
+            msg.action = USB_BAD_PREFIX;
+            return msg;
+        }
 
     if (this->bufferRX[6] >= USB_BAD_PREFIX)
-        return this->bufferRX[6];
-
+    {
+        msg.action = this->bufferRX[6];
+        return msg;
+    }
+    
     for (uint8_t i = lookUpTableUSBLength[this->bufferRX[6]] - 1; i > lookUpTableUSBLength[this->bufferRX[6]] - 7; i--)
         if (this->bufferRX[i] != 0xAA)
-            return USB_BAD_APPENDIX;
-    
-    return this->bufferRX[6];
+        {
+            msg.action = USB_BAD_APPENDIX;
+            return msg;
+        }
+
+    msg.action = this->bufferRX[6];
+
+    switch (msg.action)
+    {
+        case USB_REMOVE_SECTOR:
+            msg.sectorID = this->bufferRX[7];
+        break;
+        case USB_ADD_SECTOR:
+            msg.sectorID = this->bufferRX[7];
+            msg.diodesRange.startDiode = (this->bufferRX[8] << 24 & 0xFF000000) | (this->bufferRX[9] << 16 & 0x00FF0000) | 
+                                         (this->bufferRX[10] << 8 & 0x0000FF00) | (this->bufferRX[11] & 0x000000FF);
+            msg.diodesRange.endDiode = (this->bufferRX[12] << 24 & 0xFF000000)  | (this->bufferRX[13] << 16 & 0x00FF0000) | 
+                                        (this->bufferRX[14] << 8 & 0x0000FF00)  | (this->bufferRX[15] & 0x000000FF);
+        break;
+        case USB_SET_DIODE_COLOR_HSV:
+            msg.diodeID = (this->bufferRX[7] << 24 & 0xFF000000) | (this->bufferRX[8] << 16 & 0x00FF0000) | 
+                           (this->bufferRX[9] << 8 & 0x0000FF00) | (this->bufferRX[10] & 0x000000FF);
+            msg.hsvColor.hue = (this->bufferRX[11] << 8 & 0xFF00) | (this->bufferRX[12] & 0x00FF);
+            msg.hsvColor.saturation = this->bufferRX[13];
+            msg.hsvColor.value = this->bufferRX[14];
+        break;
+        case USB_SET_DIODE_COLOR_RGB:
+            msg.diodeID = (this->bufferRX[7] << 24 & 0xFF000000) | (this->bufferRX[8] << 16 & 0x00FF0000) | 
+                           (this->bufferRX[9] << 8 & 0x0000FF00) | (this->bufferRX[10] & 0x000000FF);
+            msg.rgbColor.red = this->bufferRX[11];
+            msg.rgbColor.green = this->bufferRX[12];
+            msg.rgbColor.blue = this->bufferRX[13];
+        break;
+        default:
+        break;
+    }
+
+    return msg;
 }
