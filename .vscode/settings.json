@@ -10,5 +10,6 @@
         "usbd_def.h": "c",
         "usbd_conf.h": "c"
     },
-    "cmake.sourceDirectory": "/home/marzd/Documents/Projects/stm32/AudioSpectrum/HalVersion"
+    "cmake.sourceDirectory": "/home/marzd/Documents/Projects/stm32/AudioSpectrum/HalVersion",
+    "cmake.configureOnOpen": true
 }

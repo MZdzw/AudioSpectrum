@@ -75,6 +75,11 @@ USBMsg_t DecodeMsg(Communication_t* this)
 
     if (this->bufferRX[6] >= USB_BAD_PREFIX)
     {
+        if (this->bufferRX[6] == 0xAA)
+        {
+            msg.action = USB_BAD_PREFIX;
+            return msg;
+        }
         msg.action = this->bufferRX[6];
         return msg;
     }
@@ -114,7 +119,28 @@ USBMsg_t DecodeMsg(Communication_t* this)
             msg.rgbColor.green = this->bufferRX[12];
             msg.rgbColor.blue = this->bufferRX[13];
         break;
+        case USB_SET_SECTOR_COLOR_RAINBOW:
+            msg.sectorID = this->bufferRX[7];
+        break;
+        case USB_SET_SECTOR_SPAWN_DIODE_COLOR:
+            msg.sectorID = this->bufferRX[7];
+            msg.rgbColor.red = this->bufferRX[8];
+            msg.rgbColor.green = this->bufferRX[9];
+            msg.rgbColor.blue = this->bufferRX[10];
+        break;
+        case USB_SET_SECTOR_ANIMATION_SPEED:
+            msg.sectorID = this->bufferRX[7];
+            msg.animationSpeed = (this->bufferRX[8] << 24 & 0xFF000000) | (this->bufferRX[9] << 16 & 0x00FF0000) | 
+                                 (this->bufferRX[10] << 8 & 0x0000FF00) | (this->bufferRX[11] & 0x000000FF);
+        break;
         default:
+            // not known coomand, set to default
+            msg.diodeID = 0;
+            msg.hsvColor.hue = 0;
+            msg.hsvColor.saturation = 0;
+            msg.hsvColor.value = 0;
+            msg.diodesRange.startDiode = 0;
+            msg.diodesRange.endDiode = 0; 
         break;
     }
 

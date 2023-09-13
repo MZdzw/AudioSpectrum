@@ -12,7 +12,8 @@ void setUp (void) /* Is run before every test, put unit init calls here. */
 }
 void tearDown (void) /* Is run after every test, put unit clean-up calls here. */
 {
-
+    uint8_t* injectedRxBuffer = GetRxBufferUSB(usb);
+    memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);    
 }
 
 static void InjectPreOrSufix(uint8_t* buffer, uint8_t startIdx)
@@ -241,4 +242,33 @@ void Test_USBSetDiodeColorHSVAndRGB(void)
     TEST_ASSERT_EQUAL_UINT8(200, msg.rgbColor.red);
     TEST_ASSERT_EQUAL_UINT8(100, msg.rgbColor.green);
     TEST_ASSERT_EQUAL_UINT8(130, msg.rgbColor.blue);
+}
+
+// Check that wrong message appendix raise error
+void Test_WrongMessageAppendix(void)
+{
+    USBMsg_t msg;
+    uint8_t* injectedRxBuffer = GetRxBufferUSB(usb);
+    InjectPreOrSufix(injectedRxBuffer, 0);
+    FillRxBuffer(injectedRxBuffer, USB_SET_DIODE_COLOR_HSV);
+    InjectPreOrSufix(injectedRxBuffer, 18);                     // wrong appendix (wrong place)
+    
+    msg = DecodeMsg(usb);
+    TEST_ASSERT_EQUAL_UINT8(USB_BAD_APPENDIX, msg.action);      // it should be bad appendix
+}
+
+// Check that wrong message prefix raise error
+void Test_WrongMessagePrefix(void)
+{
+    USBMsg_t msg;
+    uint8_t* injectedRxBuffer = GetRxBufferUSB(usb);
+    InjectPreOrSufix(injectedRxBuffer, 0);
+    FillRxBuffer(injectedRxBuffer, USB_SET_DIODE_COLOR_HSV);
+    InjectPreOrSufix(injectedRxBuffer, 15);
+    // wrong prefix
+    injectedRxBuffer[6] = 0xAA;
+    injectedRxBuffer[7] = 0xAA;
+    
+    msg = DecodeMsg(usb);
+    TEST_ASSERT_EQUAL_UINT8(USB_BAD_PREFIX, msg.action);      // it should be bad appendix
 }
