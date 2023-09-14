@@ -1,14 +1,15 @@
 #include "communication.h"
 #include "string.h"
 
+#ifndef TESTING
 typedef struct Communication_t
 {
     uint8_t bufferTX[64];
     uint8_t bufferRX[64];
     uint8_t flagUSB;
     uint32_t msgLen;
-
 } Communication_t;
+#endif
 
 static uint8_t lookUpTableUSBLength[USB_PROPER_ACTIONS] = {14, 22, 21, 20, 18, 17, 14, 17, 18};
 
