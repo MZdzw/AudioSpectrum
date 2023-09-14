@@ -15,12 +15,12 @@ set(PRODUCTION_INCLUDE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Inc
 
 set(MOCKED_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/Tests/cmock_files/)
 
-add_custom_target(generate_mocks)
+add_custom_target(generate_mocks2)
 
 foreach(MOCKED_HEADER ${PRODUCTION_HEADERS_TO_MOCK})
-    add_custom_command(TARGET generate_mocks
+    add_custom_command(TARGET generate_mocks2
                        COMMAND CMOCK_DIR=${CMAKE_CURRENT_SOURCE_DIR}/../cmock ruby ${CMAKE_CURRENT_SOURCE_DIR}/../create_mock.rb ${MOCKED_HEADER} ${MOCKED_OUTPUT_PATH}
-                       COMMAND python3 ${CMAKE_SOURCE_DIR}/Scripts/createDepForMocks.py ${CMAKE_SOURCE_DIR}/Tests/cmock_files/mock_stm32f4xx_hal_spi.h
+                       COMMAND python3 ${CMAKE_SOURCE_DIR}/Scripts/createDepForMocks.py ${CMAKE_SOURCE_DIR}/Tests/cmock_files/mock_stm32f4xx_hal_spi.h ${CMAKE_SOURCE_DIR}/Tests/cmock_files/demofile2.h
                        COMMENT "CMake - Generating mock file for ${MOCKED_HEADER}"
                        )
 endforeach()
@@ -28,7 +28,7 @@ endforeach()
 add_executable(Test_Ws2812bDriver main.c ${TEST_FILES} ${PRODUCTION_FILES} ${MOCKED_SRC})
 
 # Mocks must be generated before test building
-add_dependencies(Test_Ws2812bDriver generate_mocks)
+add_dependencies(Test_Ws2812bDriver generate_mocks2)
 
 set_source_files_properties(
     ${MOCKED_SRC}

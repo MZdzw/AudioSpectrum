@@ -247,13 +247,14 @@ def SortDataTypes(found):
 def main():
     n = len(sys.argv)
 
-    if (n != 2):
+    if (n != 3):
         print("Incorrect number of parameters")
         exit(0)
     print("hello")
 
     content = []
     fn = sys.argv[1]
+    headerPath = sys.argv[2]
     if os.path.exists(fn):
         print(os.path.basename(fn))
         file = open(fn, 'r')
@@ -344,8 +345,9 @@ def main():
             if (x.type == "FunPtr"):
                 outputData.append(x)
 
+        headerFile = os.path.split(headerPath)
         # Write to new file
-        f = open("/home/marzd/Documents/Projects/stm32/AudioSpectrum/HalVersion/Tests/cmock_files/demofile2.h", "w")
+        f = open(headerPath, "w")
         f.write("/*******GENERATED CONTENT******/\n")
         for data in outputData:
             fileOp = open(data.filename, 'r')
@@ -362,7 +364,7 @@ def main():
         fSingleLine = open(fn, 'r')    # pass an appropriate path of the required file
         lines = fSingleLine.readlines()
         lines[6 - 1] = "// " + lines[6 - 1]    # n is the line number you want to edit; subtract 1 as indexing of list starts from 0
-        lines[7 - 1] = "#include \"demofile2.h\"\n"
+        lines[7 - 1] = "#include \"" + headerFile[1] + "\"\n"
         lines.insert(7, '\n')
 
         fSingleLine.close()   # close the file and reopen in write mode to enable writing to file; you can also open in append mode and use "seek", but you will have some unwanted old data if the new data is shorter in length.
@@ -371,6 +373,7 @@ def main():
         fSingleLine.writelines(lines)
         # do the remaining operations on the file
         fSingleLine.close()
+        
 
 
 
