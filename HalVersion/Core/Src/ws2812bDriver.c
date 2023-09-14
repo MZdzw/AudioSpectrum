@@ -13,13 +13,14 @@
 SPI_HandleTypeDef hspi1;
 #endif
 
-
+#ifndef TESTING
 typedef struct Ws2812b_Driver_t
 {
     SpiWs2812B_t* deviceBuffer;
     Ws2812b_Color_t diodeColors[WS2812B_DIODES];
     Ws2812b_Sector_t sectors[MAX_SECTORS];
 } Ws2812b_Driver_t;
+#endif
 
 static unsigned int activeSectors;  
 

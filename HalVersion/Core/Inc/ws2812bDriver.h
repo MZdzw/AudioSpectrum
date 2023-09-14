@@ -40,7 +40,16 @@ typedef struct Ws2812b_Color_t
     ColorTypeLastUsed_e lastColor; 
 } Ws2812b_Color_t;
 
+#ifndef TESTING
 typedef struct Ws2812b_Driver_t Ws2812b_Driver_t;
+#else
+typedef struct Ws2812b_Driver_t
+{
+    SpiWs2812B_t* deviceBuffer;
+    Ws2812b_Color_t diodeColors[WS2812B_DIODES];
+    Ws2812b_Sector_t sectors[MAX_SECTORS];
+} Ws2812b_Driver_t;
+#endif
 
 Ws2812b_Driver_t* Ws2812b_initObject(void);
 bool SetSector(Ws2812b_Driver_t* this, const uint32_t id, const uint32_t startDiode, const uint32_t endDiode);
