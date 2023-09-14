@@ -67,7 +67,17 @@ typedef struct USBMsg_t
     USBDiodes_t diodesRange;
 } USBMsg_t;
 
+#ifndef TESTING
 typedef struct Communication_t Communication_t;
+#else
+typedef struct Communication_t
+{
+    uint8_t bufferTX[64];
+    uint8_t bufferRX[64];
+    uint8_t flagUSB;
+    uint32_t msgLen;
+} Communication_t;
+#endif
 
 Communication_t* Communication_InitObject(void);
 
