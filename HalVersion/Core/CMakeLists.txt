@@ -97,6 +97,7 @@ set(STM32_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/Src/ws2812bDriver.c
         ${CMAKE_CURRENT_SOURCE_DIR}/Src/animations.c
         ${CMAKE_CURRENT_SOURCE_DIR}/Src/communication.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/Src/activity.c
 
         ${HAL_DRIVERS}
         ${USB_DRIVERS}

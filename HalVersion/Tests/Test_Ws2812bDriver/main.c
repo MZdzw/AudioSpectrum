@@ -18,7 +18,10 @@ extern void Test_CreateSectorOnEdgeAndAddAnotherSectorOnEdge(void);
 extern void Test_CreateSectorAndAddSectorInsideAndAddSectorOutside(void);
 extern void Test_CreateSectorOutOfRange(void);
 extern void Test_CreateSectorWithDiodesOfMinusIndexes(void);
-extern void test_SettingHSVSetsRGBCorrectly(void);
+extern void Test_SettingHSVSetsRGBCorrectly(void);
+extern void Test_GettingHSVfromRGB(void);
+extern void Test_SettingRandomHSVAndGettingHSVBack(void);
+extern void Test_LastUsedColor(void);
 
 int main(void)
 {
@@ -41,7 +44,10 @@ int main(void)
     RUN_TEST(Test_CreateSectorAndAddSectorInsideAndAddSectorOutside);
     RUN_TEST(Test_CreateSectorOutOfRange);
     RUN_TEST(Test_CreateSectorWithDiodesOfMinusIndexes);
-    RUN_TEST(test_SettingHSVSetsRGBCorrectly);
+    RUN_TEST(Test_SettingHSVSetsRGBCorrectly);
+    RUN_TEST(Test_GettingHSVfromRGB);
+    RUN_TEST(Test_SettingRandomHSVAndGettingHSVBack);
+    RUN_TEST(Test_LastUsedColor);
 
     return UNITY_END();
 }

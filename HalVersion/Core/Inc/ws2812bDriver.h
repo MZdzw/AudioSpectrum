@@ -6,16 +6,19 @@
 
 #define MAX_SECTORS 5
 
-#ifndef TESTING
-typedef struct Ws2812b_RGB_t Ws2812b_RGB_t;
+
 typedef struct Ws2812b_Sector_t
 {
     unsigned int startDiode;
     unsigned int endDiode;
     bool isUsed;
 } Ws2812b_Sector_t;
-// typedef struct Ws2812b_Sector_t Ws2812b_Sector_t;
-#else
+
+typedef enum ColorTypeLastUsed_e
+{
+    RGB, HSV
+} ColorTypeLastUsed_e;
+
 typedef struct Ws2812b_RGB_t
 {
     uint8_t red;
@@ -23,16 +26,30 @@ typedef struct Ws2812b_RGB_t
     uint8_t blue;
 } Ws2812b_RGB_t;
 
-typedef struct Ws2812b_Sector_t
+typedef struct Ws2812b_HSV_t
 {
-    unsigned int startDiode;
-    unsigned int endDiode;
-    bool isUsed;
-} Ws2812b_Sector_t;
-#endif
+    uint16_t hue;
+    uint8_t saturation;
+    uint8_t value;
+} Ws2812b_HSV_t;
 
-typedef struct Ws2812b_HSV_t Ws2812b_HSV_t;
+typedef struct Ws2812b_Color_t
+{
+    Ws2812b_RGB_t rgb;
+    Ws2812b_HSV_t hsv;
+    ColorTypeLastUsed_e lastColor; 
+} Ws2812b_Color_t;
+
+#ifndef TESTING
 typedef struct Ws2812b_Driver_t Ws2812b_Driver_t;
+#else
+typedef struct Ws2812b_Driver_t
+{
+    SpiWs2812B_t* deviceBuffer;
+    Ws2812b_Color_t diodeColors[WS2812B_DIODES];
+    Ws2812b_Sector_t sectors[MAX_SECTORS];
+} Ws2812b_Driver_t;
+#endif
 
 Ws2812b_Driver_t* Ws2812b_initObject(void);
 bool SetSector(Ws2812b_Driver_t* this, const uint32_t id, const uint32_t startDiode, const uint32_t endDiode);
@@ -56,8 +73,7 @@ void SendPartOfDeviceBuffer(Ws2812b_Driver_t* this, uint32_t diodes);
 
 Ws2812b_Sector_t* GetSectors(Ws2812b_Driver_t* this);
 
-#ifdef TESTING
-Ws2812b_RGB_t* GetDiodeColorsArray(Ws2812b_Driver_t* this);
-#endif
+Ws2812b_Color_t* GetDiodeColorsArray(Ws2812b_Driver_t* this);
+
 
 #endif

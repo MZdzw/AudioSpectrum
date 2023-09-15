@@ -1,4 +1,7 @@
 #include <stdbool.h>
+#include <time.h>
+#include <stdlib.h>
+#include "math.h"
 #include "unity.h"
 #include "ws2812bDriver.h"
 #include "mock_stm32f4xx_hal_spi.h"
@@ -345,18 +348,92 @@ void Test_CreateSectorWithDiodesOfMinusIndexes(void)
 }
 
 // Check if HSV sets RGB correctly
-void test_SettingHSVSetsRGBCorrectly(void)
+void Test_SettingHSVSetsRGBCorrectly(void)
 {
-    uint32_t id = 4;
-    uint8_t redExpected = 129;
-    uint8_t greenExpected = 204;
-    uint8_t blueExpected = 92;
+    uint32_t id = 5;
+    uint8_t redExpected = 61;
+    uint8_t greenExpected = 102;
+    uint8_t blueExpected = 41;
 
-    SetDiodeColorHSV(deviceDriver, id, 100, 55, 80);
+    SetDiodeColorHSV(deviceDriver, id, 100, 60, 40);
     uint8_t red, green, blue;
     GetDiodeColorRGB(deviceDriver, id, &red, &green, &blue);
+
     
     TEST_ASSERT_EQUAL_UINT8(redExpected, red);
     TEST_ASSERT_EQUAL_UINT8(greenExpected, green);
     TEST_ASSERT_EQUAL_UINT8(blueExpected, blue);
+
+    SetDiodeColorHSV(deviceDriver, id, 285, 53, 6);
+    redExpected = 13;
+    greenExpected = 7;
+    blueExpected = 15;
+    GetDiodeColorRGB(deviceDriver, id, &red, &green, &blue);
+    TEST_ASSERT_EQUAL_UINT8(redExpected, red);
+    TEST_ASSERT_EQUAL_UINT8(greenExpected, green);
+    TEST_ASSERT_EQUAL_UINT8(blueExpected, blue);
+}
+
+// Check getter of HSV (check if converse from RGB to HSV is correct)
+void Test_GettingHSVfromRGB(void)
+{
+    uint32_t id = 8;
+    uint8_t redSet = 61;
+    uint8_t greenSet = 102;
+    uint8_t blueSet = 40;
+
+    SetDiodeColorRGB(deviceDriver, id, redSet, greenSet, blueSet);
+    uint8_t red, green, blue;
+    GetDiodeColorRGB(deviceDriver, id, &red, &green, &blue);
+    TEST_ASSERT_EQUAL_UINT8(redSet, red);
+    TEST_ASSERT_EQUAL_UINT8(greenSet, green);
+    TEST_ASSERT_EQUAL_UINT8(blueSet, blue);
+    // getting HSV
+    uint16_t hue;
+    uint8_t saturation, value;
+    uint16_t hueExpected = 100;
+    uint8_t saturationExpected = 61;
+    uint8_t valueExpected = 40;
+    GetDiodeColorHSV(deviceDriver, id, &hue, &saturation, &value);
+    TEST_ASSERT_EQUAL_UINT16(hueExpected, hue);
+    TEST_ASSERT_EQUAL_UINT8(saturationExpected, saturation);
+    TEST_ASSERT_EQUAL_UINT8(valueExpected, value);
+}
+
+// Check setting random HSV and getting HSV (it checks conversion between HSV-RGB and RGB-HSV)
+void Test_SettingRandomHSVAndGettingHSVBack(void)
+{
+    srand(time(NULL));
+    uint32_t id = 8;
+    uint16_t randomHue;
+    uint8_t randomSaturation;
+    uint8_t randomValue;
+
+    uint16_t hue;
+    uint8_t saturation, value;
+    
+    for (unsigned int i = 0; i < 100; i++)
+    {
+        randomHue = rand() % 361;
+        randomSaturation = rand() % 101;
+        randomValue = rand() % 101;
+        SetDiodeColorHSV(deviceDriver, id, randomHue, randomSaturation, randomValue);
+        GetDiodeColorHSV(deviceDriver, id, &hue, &saturation, &value);
+        TEST_ASSERT_EQUAL_UINT16(randomHue, hue);
+        TEST_ASSERT_EQUAL_UINT8(randomSaturation, saturation);
+        TEST_ASSERT_EQUAL_UINT8(randomValue, value);
+    }
+}
+
+// check that setting color type sets last used (set) color correctly
+void Test_LastUsedColor(void)
+{
+    uint32_t idRGB = 8;
+    uint32_t idHSV = 10;
+    SetDiodeColorRGB(deviceDriver, idRGB, 10, 10, 10);
+    SetDiodeColorHSV(deviceDriver, idHSV, 15, 15, 15);
+    TEST_ASSERT_EQUAL_INT(RGB, GetDiodeColorsArray(deviceDriver)[idRGB].lastColor);
+    TEST_ASSERT_EQUAL_INT(HSV, GetDiodeColorsArray(deviceDriver)[idHSV].lastColor);
+    SetDiodeColorRGB(deviceDriver, idHSV, 10, 10, 10);
+    TEST_ASSERT_EQUAL_INT(RGB, GetDiodeColorsArray(deviceDriver)[idHSV].lastColor);
 }
