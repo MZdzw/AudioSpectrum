@@ -92,6 +92,32 @@ static bool CheckOverlapping(const uint32_t newStartDiode, const uint32_t newEnd
     return true;
 }
 
+static void ResetSectorDiodesColor(Ws2812b_Driver_t* this, const uint32_t id)
+{
+    if (this->sectors[id].startDiode > this->sectors[id].endDiode)
+    {
+        for (uint32_t i = this->sectors[id].endDiode; i > 0; i--)
+        {
+            SetDiodeColorRGB(this, i, 0, 0, 0);            
+        }
+        SetDiodeColorRGB(this, 0, 0, 0, 0);
+        for (uint32_t i = WS2812B_DIODES; i > this->sectors[id].startDiode; i--)
+        {
+            SetDiodeColorRGB(this, i, 0, 0, 0);            
+        }
+        SetDiodeColorRGB(this, this->sectors[id].startDiode, 0, 0, 0);
+    }
+    else
+    {
+        for (uint32_t i = this->sectors[id].endDiode; i > this->sectors[id].startDiode; i--)
+        {
+            SetDiodeColorRGB(this, i, 0, 0, 0);
+        }
+        SetDiodeColorRGB(this, this->sectors[id].startDiode, 0, 0, 0);
+    }
+
+}
+
 // Objects
 static Ws2812b_Driver_t obj = {0, {{0, 0, 0}}, {{0, 0, false}}};
 
@@ -135,6 +161,7 @@ bool RemoveSector(Ws2812b_Driver_t* this, const uint32_t id)
     if (!(this->sectors[id].isUsed))
         return false;
     
+    ResetSectorDiodesColor(this, id);
     this->sectors[id].startDiode = 0;
     this->sectors[id].endDiode = 0;
     this->sectors[id].isUsed = false;

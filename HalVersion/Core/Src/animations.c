@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include "animations.h"
 
+#ifndef TESTING
 typedef struct Animation_t
 {
     uint32_t sectorId;
@@ -13,6 +14,7 @@ typedef struct LedStrip_t
     Animation_t animation[MAX_SECTORS];
     Ws2812b_Driver_t* ledStripDriver;   
 } LedStrip_t;
+#endif
 
 
 static LedStrip_t obj = {{{0, 0, NULL}}, NULL};
@@ -107,10 +109,53 @@ void SetAnimationFunPtr(Animation_t* this, uint32_t id)
 void SetHSVColorForSector(Ws2812b_Driver_t* this, uint32_t id, uint16_t hue, uint8_t saturation, uint8_t value)
 {
     Ws2812b_Sector_t sector = GetSectors(this)[id];
-    for (unsigned int i = sector.startDiode; i < sector.endDiode; i++)
+
+    if (sector.startDiode > sector.endDiode)
     {
-        SetDiodeColorHSV(this, i, hue, saturation, value);
-    } 
+        for (uint32_t i = sector.endDiode; i > 0; i--)
+        {
+            SetDiodeColorHSV(this, i, hue, saturation, value);
+        }
+        SetDiodeColorHSV(this, 0, hue, saturation, value);
+        for (uint32_t i = WS2812B_DIODES - 1; i >= sector.startDiode; i--)
+        {
+            SetDiodeColorHSV(this, i, hue, saturation, value);
+        }
+    }
+    else
+    {
+        for (uint32_t i = sector.endDiode; i > sector.startDiode; i--)
+        {
+            SetDiodeColorHSV(this, i, hue, saturation, value);
+        }
+        SetDiodeColorHSV(this, sector.startDiode, hue, saturation, value);
+    }
+}
+
+void SetRGBColorForSector(Ws2812b_Driver_t* this, uint32_t id, uint8_t red, uint8_t green, uint8_t blue)
+{
+    Ws2812b_Sector_t sector = GetSectors(this)[id];
+
+    if (sector.startDiode > sector.endDiode)
+    {
+        for (uint32_t i = sector.endDiode; i > 0; i--)
+        {
+            SetDiodeColorRGB(this, i, red, green, blue);
+        }
+        SetDiodeColorRGB(this, 0, red, green, blue);
+        for (uint32_t i = WS2812B_DIODES - 1; i >= sector.startDiode; i--)
+        {
+            SetDiodeColorRGB(this, i, red, green, blue);
+        }
+    }
+    else
+    {
+        for (uint32_t i = sector.endDiode; i > sector.startDiode; i--)
+        {
+            SetDiodeColorRGB(this, i, red, green, blue);
+        }
+        SetDiodeColorRGB(this, sector.startDiode, red, green, blue);
+    }
 }
 
 void SetRainbowForSector(Ws2812b_Driver_t* this, uint32_t sectorID)
@@ -123,6 +168,36 @@ void SetRainbowForSector(Ws2812b_Driver_t* this, uint32_t sectorID)
     {
         SetDiodeColorHSV(this, i, step * cnt, 100, 100);
         cnt++;
+    }
+    if (sector.startDiode > sector.endDiode)
+    {
+        diodesNum = sector.endDiode + (WS2812B_DIODES - sector.startDiode) + 1;
+        step = 360 / diodesNum;
+        cnt = 0;
+        for (uint32_t i = sector.endDiode; i > 0; i--)
+        {
+            SetDiodeColorHSV(this, i, step * cnt, 100, 100);
+            cnt++;
+        }
+        SetDiodeColorHSV(this, 0, step * cnt, 100, 100);
+        cnt++;
+        for (uint32_t i = WS2812B_DIODES - 1; i >= sector.startDiode; i--)
+        {
+            SetDiodeColorHSV(this, i, step * cnt, 100, 100);
+            cnt++;
+        }
+    }
+    else
+    {
+        diodesNum = sector.endDiode - sector.startDiode;
+        step = 360 / diodesNum;
+        cnt = 0;
+        for (uint32_t i = sector.endDiode; i > sector.startDiode; i--)
+        {
+            SetDiodeColorHSV(this, i, step * cnt, 100, 100);
+            cnt++;
+        }
+        SetDiodeColorHSV(this, sector.startDiode, step * cnt, 100, 100);
     }
 }
 

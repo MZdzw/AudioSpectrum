@@ -107,6 +107,15 @@ static void FillRxBuffer(uint8_t* buffer, USBAction_e action)
             buffer[10] = 0;     // speed
             buffer[11] = 10;    // speed (32 bits)
         break;
+        case USB_SET_ROLLING_EFFECT:
+            // inject spawn diode RGB color woth sector nr 2
+            buffer[6] = 9;      // command ID    
+            buffer[7] = 2;      // sector ID
+        break;
+        case USB_SET_DIMMING_EFFECT:
+            // inject sector 4 with animation speed
+            buffer[6] = 10;      // command ID    
+            buffer[7] = 4;      // sector ID
         default:
         break; 
     }
@@ -212,6 +221,24 @@ void Test_DecodingMessages(void)
 
     msg = DecodeMsg(usb);
     TEST_ASSERT_EQUAL_UINT8(USB_SET_SECTOR_ANIMATION_SPEED, msg.action);
+
+    memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);
+
+    InjectPreOrSufix(injectedRxBuffer, 0);
+    FillRxBuffer(injectedRxBuffer, USB_SET_ROLLING_EFFECT);
+    InjectPreOrSufix(injectedRxBuffer, 8);
+
+    msg = DecodeMsg(usb);
+    TEST_ASSERT_EQUAL_UINT8(USB_SET_ROLLING_EFFECT, msg.action);
+
+    memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);
+
+    InjectPreOrSufix(injectedRxBuffer, 0);
+    FillRxBuffer(injectedRxBuffer, USB_SET_DIMMING_EFFECT);
+    InjectPreOrSufix(injectedRxBuffer, 8);
+
+    msg = DecodeMsg(usb);
+    TEST_ASSERT_EQUAL_UINT8(USB_SET_DIMMING_EFFECT, msg.action);
 }
 
 // Check that decode USB_SET_DIODE_COLOR_HSV and USB_SET_DIODE_COLOR_RGB works as expected
@@ -271,4 +298,28 @@ void Test_WrongMessagePrefix(void)
     
     msg = DecodeMsg(usb);
     TEST_ASSERT_EQUAL_UINT8(USB_BAD_PREFIX, msg.action);      // it should be bad appendix
+}
+
+// Check that setting animations trigger good values
+void Test_CheckSettingAnimations(void)
+{
+    USBMsg_t msg;
+    uint8_t* injectedRxBuffer = GetRxBufferUSB(usb);
+    memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);
+
+    InjectPreOrSufix(injectedRxBuffer, 0);
+    FillRxBuffer(injectedRxBuffer, USB_SET_ROLLING_EFFECT);
+    InjectPreOrSufix(injectedRxBuffer, 8);
+
+    msg = DecodeMsg(usb);
+    TEST_ASSERT_EQUAL_UINT8(USB_ROLLING, msg.animation);
+
+    memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);
+
+    InjectPreOrSufix(injectedRxBuffer, 0);
+    FillRxBuffer(injectedRxBuffer, USB_SET_DIMMING_EFFECT);
+    InjectPreOrSufix(injectedRxBuffer, 8);
+
+    msg = DecodeMsg(usb);
+    TEST_ASSERT_EQUAL_UINT8(USB_DIMMING, msg.animation);
 }

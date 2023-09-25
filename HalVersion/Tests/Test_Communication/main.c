@@ -6,6 +6,7 @@ extern void Test_DecodingMessages(void);
 extern void Test_USBSetDiodeColorHSVAndRGB(void);
 extern void Test_WrongMessageAppendix(void);
 extern void Test_WrongMessagePrefix(void);
+extern void Test_CheckSettingAnimations(void);
 
 int main(void)
 {
@@ -16,6 +17,7 @@ int main(void)
     RUN_TEST(Test_USBSetDiodeColorHSVAndRGB);
     RUN_TEST(Test_WrongMessageAppendix);
     RUN_TEST(Test_WrongMessagePrefix);
+    RUN_TEST(Test_CheckSettingAnimations);
 
     return UNITY_END();
 }
