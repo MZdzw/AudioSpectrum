@@ -22,7 +22,8 @@ typedef enum USBAction_e
     USB_SET_SECTOR_SPAWN_DIODE_COLOR,     // 17 length
     USB_SET_SECTOR_ANIMATION_SPEED,       // 18 length
     USB_SET_ROLLING_EFFECT,               // 14 length
-    USB_SET_DIMMING_EFFECT,               // 14 length
+    USB_SET_DIMMING_ENTIRE_EFFECT,        // 14 length
+    USB_SET_NO_ANIMATION_EFFECT,          // 14 length
     // Put new mesages here
 
     USB_PROPER_ACTIONS,
@@ -35,7 +36,8 @@ typedef enum USBAction_e
 typedef enum USBAnimation_e
 {
     USB_ROLLING,
-    USB_DIMMING
+    USB_DIMMING_ENTIRE,
+    USB_NO_ANIMATION
 } USBAnimation_e;
 
 typedef struct USBRGB_t

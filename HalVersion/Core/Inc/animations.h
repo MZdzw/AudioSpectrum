@@ -4,6 +4,7 @@
 
 typedef enum Animation_e
 {
+    NO_ANIMATION,
     DIMMING,
     ROLLING
 } Animation_e;

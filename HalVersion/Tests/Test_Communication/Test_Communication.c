@@ -112,7 +112,7 @@ static void FillRxBuffer(uint8_t* buffer, USBAction_e action)
             buffer[6] = 9;      // command ID    
             buffer[7] = 2;      // sector ID
         break;
-        case USB_SET_DIMMING_EFFECT:
+        case USB_SET_DIMMING_ENTIRE_EFFECT:
             // inject sector 4 with animation speed
             buffer[6] = 10;      // command ID    
             buffer[7] = 4;      // sector ID
@@ -234,11 +234,11 @@ void Test_DecodingMessages(void)
     memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);
 
     InjectPreOrSufix(injectedRxBuffer, 0);
-    FillRxBuffer(injectedRxBuffer, USB_SET_DIMMING_EFFECT);
+    FillRxBuffer(injectedRxBuffer, USB_SET_DIMMING_ENTIRE_EFFECT);
     InjectPreOrSufix(injectedRxBuffer, 8);
 
     msg = DecodeMsg(usb);
-    TEST_ASSERT_EQUAL_UINT8(USB_SET_DIMMING_EFFECT, msg.action);
+    TEST_ASSERT_EQUAL_UINT8(USB_SET_DIMMING_ENTIRE_EFFECT, msg.action);
 }
 
 // Check that decode USB_SET_DIODE_COLOR_HSV and USB_SET_DIODE_COLOR_RGB works as expected
@@ -317,9 +317,9 @@ void Test_CheckSettingAnimations(void)
     memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);
 
     InjectPreOrSufix(injectedRxBuffer, 0);
-    FillRxBuffer(injectedRxBuffer, USB_SET_DIMMING_EFFECT);
+    FillRxBuffer(injectedRxBuffer, USB_SET_DIMMING_ENTIRE_EFFECT);
     InjectPreOrSufix(injectedRxBuffer, 8);
 
     msg = DecodeMsg(usb);
-    TEST_ASSERT_EQUAL_UINT8(USB_DIMMING, msg.animation);
+    TEST_ASSERT_EQUAL_UINT8(USB_DIMMING_ENTIRE, msg.animation);
 }

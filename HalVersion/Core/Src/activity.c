@@ -41,12 +41,13 @@ static Activity_e ActivitySetSectorColorRainbow(LedStrip_t* leds, USBMsg_t* usbM
 static Activity_e ActivitySetSectorSpawnDiode(LedStrip_t* leds, USBMsg_t* usbMsg);
 static Activity_e ActivitySetSectorAnimationSpeed(LedStrip_t* leds, USBMsg_t* usbMsg);
 static Activity_e ActivitySetAnimationRolling(LedStrip_t* leds, USBMsg_t* usbMsg);
-static Activity_e ActivitySetAnimationDimming(LedStrip_t* leds, USBMsg_t* usbMsg);
+static Activity_e ActivitySetAnimationDimmingEntire(LedStrip_t* leds, USBMsg_t* usbMsg);
+static Activity_e ActivitySetAnimationNoAnimation(LedStrip_t* leds, USBMsg_t* usbMsg);
 
-static Activity lookUpTableActivities[11] = {&ActivityRemoveSector, &ActivityAddSector, &ActivitySetDiodeHSV, &ActivitySetDiodeRGB,
+static Activity lookUpTableActivities[12] = {&ActivityRemoveSector, &ActivityAddSector, &ActivitySetDiodeHSV, &ActivitySetDiodeRGB,
                                         &ActivitySetSectorColorHSV, &ActivitySetSectorColorRGB, &ActivitySetSectorColorRainbow, 
                                         &ActivitySetSectorSpawnDiode, &ActivitySetSectorAnimationSpeed,
-                                        &ActivitySetAnimationRolling, &ActivitySetAnimationDimming};
+                                        &ActivitySetAnimationRolling, &ActivitySetAnimationDimmingEntire, &ActivitySetAnimationNoAnimation};
 
 
 static Activity_e ActivityRemoveSector(LedStrip_t* leds, USBMsg_t* usbMsg)
@@ -186,7 +187,7 @@ static Activity_e ActivitySetAnimationRolling(LedStrip_t* leds, USBMsg_t* usbMsg
     return OK;
 }
 
-static Activity_e ActivitySetAnimationDimming(LedStrip_t* leds, USBMsg_t* usbMsg)
+static Activity_e ActivitySetAnimationDimmingEntire(LedStrip_t* leds, USBMsg_t* usbMsg)
 {
     if (usbMsg->sectorID >= MAX_SECTORS)
         return SECTOR_ID_OUT_OF_RANGE;
@@ -194,6 +195,18 @@ static Activity_e ActivitySetAnimationDimming(LedStrip_t* leds, USBMsg_t* usbMsg
         return SECTOR_ID_NOT_USED;
     
     SetAnimation(leds, DIMMING, usbMsg->sectorID);
+
+    return OK;
+}
+
+static Activity_e ActivitySetAnimationNoAnimation(LedStrip_t* leds, USBMsg_t* usbMsg)
+{
+    if (usbMsg->sectorID >= MAX_SECTORS)
+        return SECTOR_ID_OUT_OF_RANGE;
+    if (!GetSectors(GetDriver(leds))[usbMsg->sectorID].isUsed)
+        return SECTOR_ID_NOT_USED;
+    
+    SetAnimation(leds, NO_ANIMATION, usbMsg->sectorID);
 
     return OK;
 }

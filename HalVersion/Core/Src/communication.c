@@ -11,7 +11,7 @@ typedef struct Communication_t
 } Communication_t;
 #endif
 
-static uint8_t lookUpTableUSBLength[USB_PROPER_ACTIONS] = {14, 22, 21, 20, 18, 17, 14, 17, 18, 14, 14};
+static uint8_t lookUpTableUSBLength[USB_PROPER_ACTIONS] = {14, 22, 21, 20, 18, 17, 14, 17, 18, 14, 14, 14};
 
 static inline void SendUSB(Communication_t* this)
 {
@@ -138,9 +138,13 @@ USBMsg_t DecodeMsg(Communication_t* this)
             msg.sectorID = this->bufferRX[7];
             msg.animation = USB_ROLLING;
         break;
-        case USB_SET_DIMMING_EFFECT:
+        case USB_SET_DIMMING_ENTIRE_EFFECT:
             msg.sectorID = this->bufferRX[7];
-            msg.animation = USB_DIMMING;
+            msg.animation = USB_DIMMING_ENTIRE;
+        break;
+        case USB_SET_NO_ANIMATION_EFFECT:
+            msg.sectorID = this->bufferRX[7];
+            msg.animation = USB_NO_ANIMATION;
         break;
         default:
             // not known coomand, set to default

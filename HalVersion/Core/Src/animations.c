@@ -22,6 +22,36 @@ static LedStrip_t obj = {{{0, 0, NULL}}, NULL};
 static DimmingDirection_e dimDir[MAX_SECTORS] = {ASCENDING};
 static Ws2812b_Color_t* colors_p;
 
+static void IterateThroughSectorAndSetHSV(Ws2812b_Driver_t* driver, Ws2812b_Sector_t sector, 
+uint16_t hue, uint8_t saturation, uint8_t value, int8_t addComponent)
+{
+    if (sector.startDiode > sector.endDiode)
+    {
+        for (uint32_t i = sector.endDiode; i > 0; i--)
+        {
+            SetDiodeColorHSV(driver, i, hue, saturation, value + addComponent);
+        }
+        SetDiodeColorHSV(driver, 0, hue, saturation, value + addComponent);
+        for (uint32_t i = WS2812B_DIODES - 1; i >= sector.startDiode; i--)
+        {
+            SetDiodeColorHSV(driver, i, hue, saturation, value + addComponent);
+        }
+    }
+    else
+    {
+        for (uint32_t i = sector.endDiode; i > sector.startDiode; i--)
+        {
+            SetDiodeColorHSV(driver, i, hue, saturation, value + addComponent);
+        }
+        SetDiodeColorHSV(driver, sector.startDiode, hue, saturation, value + addComponent);
+    }    
+}
+
+static void NoAnimation(Ws2812b_Driver_t* driver, uint32_t sectorId)
+{
+
+}
+
 static void Dimming(Ws2812b_Driver_t* driver, uint32_t sectorId)
 {
     Ws2812b_Sector_t* sectors = GetSectors(driver);
@@ -35,17 +65,11 @@ static void Dimming(Ws2812b_Driver_t* driver, uint32_t sectorId)
         dimDir[sectorId] = DESCENDING;
     if (dimDir[sectorId] == ASCENDING)
     {
-        for (uint32_t i = sectors[sectorId].startDiode; i <= sectors[sectorId].endDiode; i++)
-        {
-            SetDiodeColorHSV(driver, i, hue, saturation, value + 1);
-        }
+        IterateThroughSectorAndSetHSV(driver, sectors[sectorId], hue, saturation, value, 1);
     }
     else
     {
-        for (uint32_t i = sectors[sectorId].startDiode; i <= sectors[sectorId].endDiode; i++)
-        {
-            SetDiodeColorHSV(driver, i, hue, saturation, value - 1);
-        }
+        IterateThroughSectorAndSetHSV(driver, sectors[sectorId], hue, saturation, value, -1);
     }
 }
 
@@ -110,26 +134,7 @@ void SetHSVColorForSector(Ws2812b_Driver_t* this, uint32_t id, uint16_t hue, uin
 {
     Ws2812b_Sector_t sector = GetSectors(this)[id];
 
-    if (sector.startDiode > sector.endDiode)
-    {
-        for (uint32_t i = sector.endDiode; i > 0; i--)
-        {
-            SetDiodeColorHSV(this, i, hue, saturation, value);
-        }
-        SetDiodeColorHSV(this, 0, hue, saturation, value);
-        for (uint32_t i = WS2812B_DIODES - 1; i >= sector.startDiode; i--)
-        {
-            SetDiodeColorHSV(this, i, hue, saturation, value);
-        }
-    }
-    else
-    {
-        for (uint32_t i = sector.endDiode; i > sector.startDiode; i--)
-        {
-            SetDiodeColorHSV(this, i, hue, saturation, value);
-        }
-        SetDiodeColorHSV(this, sector.startDiode, hue, saturation, value);
-    }
+    IterateThroughSectorAndSetHSV(this, sector, hue, saturation, value, 0);
 }
 
 void SetRGBColorForSector(Ws2812b_Driver_t* this, uint32_t id, uint8_t red, uint8_t green, uint8_t blue)
@@ -211,6 +216,10 @@ void SetAnimation(LedStrip_t* this, Animation_e animationType, uint32_t id)
     else if (animationType == ROLLING)
     {
         animationHolder[id].animation_p = Rolling;
+    }
+    else if (animationType == NO_ANIMATION)
+    {
+        animationHolder[id].animation_p = NoAnimation;
     }
 }
 
