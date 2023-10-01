@@ -65,16 +65,13 @@ void test_DiodesArrayClearAfterInit(void)
 void test_SettingAndGettingTheSameValue(void)
 {
     uint32_t id = 4;
-    uint8_t redExpected = 90;
-    uint8_t greenExpected = 122;
-    uint8_t blueExpected = 140;
-    SetDiodeColorRGB(deviceDriver, id, redExpected, greenExpected, blueExpected);
-    uint8_t red, green, blue;
-    GetDiodeColorRGB(deviceDriver, id, &red, &green, &blue);
+    Ws2812b_RGB_t rgbExpected = {.red = 90, .green = 122, .blue = 140};
+    SetDiodeColorRGB(GetDiodesArray(deviceDriver) + id, rgbExpected);
+
+    Ws2812b_RGB_t rgbActual = GetDiodeColorRGB(GetDiodesArray(deviceDriver) + id);
     
-    TEST_ASSERT_EQUAL_UINT8(redExpected, red);
-    TEST_ASSERT_EQUAL_UINT8(greenExpected, green);
-    TEST_ASSERT_EQUAL_UINT8(blueExpected, blue);
+    TEST_ASSERT_EQUAL_MEMORY(&rgbExpected, &rgbActual, sizeof(Ws2812b_RGB_t));
+
 }
 
 // Check that after init device Buffer (buffer connected directly with Spi hardware)
@@ -92,10 +89,8 @@ void test_DeviceBufferFilledCorectly(void)
     TEST_ASSERT_EQUAL_UINT8_ARRAY(expectedBuffer, getSpiBufferPointer(GetDeviceBuffer(deviceDriver)), sizeof(expectedBuffer));
     HAL_SPI_Transmit_DMA_IgnoreAndReturn(0);    // 0 means return OK
     uint32_t id = 4;
-    uint8_t red = 192;
-    uint8_t green = 0;
-    uint8_t blue = 0;
-    SetDiodeColorRGB(deviceDriver, id, red, green, blue);
+    Ws2812b_RGB_t rgb = {192, 0, 0};
+    SetDiodeColorRGB(GetDiodesArray(deviceDriver) + id, rgb);
     SendDeviceBuffer(deviceDriver);
     // first 144 bytes should be equal to zero - reset
     // one color posses 24 bytes (24 array elements)
@@ -150,10 +145,8 @@ void test_DeviceBufferFirstElementFilledCorectly(void)
     TEST_ASSERT_EQUAL_UINT8_ARRAY(expectedBuffer, getSpiBufferPointer(GetDeviceBuffer(deviceDriver)), sizeof(expectedBuffer));
     HAL_SPI_Transmit_DMA_IgnoreAndReturn(0);    // 0 means return OK
     uint32_t id = 0;
-    uint8_t red = 143;
-    uint8_t green = 189;
-    uint8_t blue = 40;
-    SetDiodeColorRGB(deviceDriver, id, red, green, blue);
+    Ws2812b_RGB_t rgb = {143, 189, 40};
+    SetDiodeColorRGB(GetDiodesArray(deviceDriver) + id, rgb);
     SendDeviceBuffer(deviceDriver);
     for (uint32_t i = 0; i < WS2812B_DIODES * SPI_BYTES_PER_WS2812B_BIT * 8 * 3 + 144; i++)
     {
@@ -195,10 +188,8 @@ void test_DeviceBufferLastElementFilledCorectly(void)
     TEST_ASSERT_EQUAL_UINT8_ARRAY(expectedBuffer, getSpiBufferPointer(GetDeviceBuffer(deviceDriver)), sizeof(expectedBuffer));
     HAL_SPI_Transmit_DMA_IgnoreAndReturn(0);    // 0 means return OK
     uint32_t id = WS2812B_DIODES - 1;
-    uint8_t red = 200;
-    uint8_t green = 222;
-    uint8_t blue = 153;
-    SetDiodeColorRGB(deviceDriver, id, red, green, blue);
+    Ws2812b_RGB_t rgb = {200, 222, 153};
+    SetDiodeColorRGB(GetDiodesArray(deviceDriver) + id, rgb);
     SendDeviceBuffer(deviceDriver);
     for (uint32_t i = 0; i < WS2812B_DIODES * SPI_BYTES_PER_WS2812B_BIT * 8 * 3 + 144; i++)
     {
@@ -369,53 +360,42 @@ void Test_CreateSectorWithDiodesOfMinusIndexes(void)
 void Test_SettingHSVSetsRGBCorrectly(void)
 {
     uint32_t id = 5;
-    uint8_t redExpected = 61;
-    uint8_t greenExpected = 102;
-    uint8_t blueExpected = 41;
+    Ws2812b_RGB_t rgbExpected = {61, 102, 41};
 
-    SetDiodeColorHSV(deviceDriver, id, 100, 60, 40);
+    SetDiodeColorRGB(GetDiodesArray(deviceDriver) + id, rgbExpected);
     uint8_t red, green, blue;
-    GetDiodeColorRGB(deviceDriver, id, &red, &green, &blue);
+    Ws2812b_RGB_t rgbActual;
+    rgbActual = GetDiodeColorRGB(GetDiodesArray(deviceDriver) + id);
 
-    
-    TEST_ASSERT_EQUAL_UINT8(redExpected, red);
-    TEST_ASSERT_EQUAL_UINT8(greenExpected, green);
-    TEST_ASSERT_EQUAL_UINT8(blueExpected, blue);
+    TEST_ASSERT_EQUAL_MEMORY(&rgbExpected, &rgbActual, sizeof(Ws2812b_RGB_t));
 
-    SetDiodeColorHSV(deviceDriver, id, 285, 53, 6);
-    redExpected = 13;
-    greenExpected = 7;
-    blueExpected = 15;
-    GetDiodeColorRGB(deviceDriver, id, &red, &green, &blue);
-    TEST_ASSERT_EQUAL_UINT8(redExpected, red);
-    TEST_ASSERT_EQUAL_UINT8(greenExpected, green);
-    TEST_ASSERT_EQUAL_UINT8(blueExpected, blue);
+
+    SetDiodeColorHSV(GetDiodesArray(deviceDriver) + id, (Ws2812b_HSV_t){285, 53, 6});
+    rgbExpected.red = 13;
+    rgbExpected.green = 7;
+    rgbExpected.blue = 15;
+    rgbActual = GetDiodeColorRGB(GetDiodesArray(deviceDriver) + id);
+
+    TEST_ASSERT_EQUAL_MEMORY(&rgbExpected, &rgbActual, sizeof(Ws2812b_RGB_t));
 }
 
 // Check getter of HSV (check if converse from RGB to HSV is correct)
 void Test_GettingHSVfromRGB(void)
 {
     uint32_t id = 8;
-    uint8_t redSet = 61;
-    uint8_t greenSet = 102;
-    uint8_t blueSet = 40;
+    Ws2812b_RGB_t rgbExpected = {61, 102, 40};
 
-    SetDiodeColorRGB(deviceDriver, id, redSet, greenSet, blueSet);
-    uint8_t red, green, blue;
-    GetDiodeColorRGB(deviceDriver, id, &red, &green, &blue);
-    TEST_ASSERT_EQUAL_UINT8(redSet, red);
-    TEST_ASSERT_EQUAL_UINT8(greenSet, green);
-    TEST_ASSERT_EQUAL_UINT8(blueSet, blue);
+    SetDiodeColorRGB(GetDiodesArray(deviceDriver) + id, rgbExpected);
+    Ws2812b_RGB_t rgbActual;   
+    rgbActual = GetDiodeColorRGB(GetDiodesArray(deviceDriver) + id);
+
+    TEST_ASSERT_EQUAL_MEMORY(&rgbExpected, &rgbActual, sizeof(Ws2812b_RGB_t));
     // getting HSV
-    uint16_t hue;
-    uint8_t saturation, value;
-    uint16_t hueExpected = 100;
-    uint8_t saturationExpected = 61;
-    uint8_t valueExpected = 40;
-    GetDiodeColorHSV(deviceDriver, id, &hue, &saturation, &value);
-    TEST_ASSERT_EQUAL_UINT16(hueExpected, hue);
-    TEST_ASSERT_EQUAL_UINT8(saturationExpected, saturation);
-    TEST_ASSERT_EQUAL_UINT8(valueExpected, value);
+    Ws2812b_HSV_t hsvActual;
+    Ws2812b_HSV_t hsvExpected = {100, 61, 40};
+    hsvActual = GetDiodeColorHSV(GetDiodesArray(deviceDriver) + id);
+
+    TEST_ASSERT_EQUAL_MEMORY(&hsvExpected, &hsvActual, sizeof(Ws2812b_HSV_t));
 }
 
 // Check setting random HSV and getting HSV (it checks conversion between HSV-RGB and RGB-HSV)
@@ -423,23 +403,17 @@ void Test_SettingRandomHSVAndGettingHSVBack(void)
 {
     srand(time(NULL));
     uint32_t id = 8;
-    uint16_t randomHue;
-    uint8_t randomSaturation;
-    uint8_t randomValue;
-
-    uint16_t hue;
-    uint8_t saturation, value;
+    Ws2812b_HSV_t hsvRandom, hsv;
     
     for (unsigned int i = 0; i < 100; i++)
     {
-        randomHue = rand() % 361;
-        randomSaturation = rand() % 101;
-        randomValue = rand() % 101;
-        SetDiodeColorHSV(deviceDriver, id, randomHue, randomSaturation, randomValue);
-        GetDiodeColorHSV(deviceDriver, id, &hue, &saturation, &value);
-        TEST_ASSERT_EQUAL_UINT16(randomHue, hue);
-        TEST_ASSERT_EQUAL_UINT8(randomSaturation, saturation);
-        TEST_ASSERT_EQUAL_UINT8(randomValue, value);
+        hsvRandom.hue = rand() % 361;
+        hsvRandom.saturation = rand() % 101;
+        hsvRandom.value = rand() % 101;
+        SetDiodeColorHSV(GetDiodesArray(deviceDriver) + id, hsvRandom);
+        hsv = GetDiodeColorHSV(GetDiodesArray(deviceDriver) + id);
+
+        TEST_ASSERT_EQUAL_MEMORY(&hsv, &hsvRandom, sizeof(Ws2812b_HSV_t));
     }
 }
 
@@ -448,11 +422,13 @@ void Test_LastUsedColor(void)
 {
     uint32_t idRGB = 8;
     uint32_t idHSV = 10;
-    SetDiodeColorRGB(deviceDriver, idRGB, 10, 10, 10);
-    SetDiodeColorHSV(deviceDriver, idHSV, 15, 15, 15);
+    SetDiodeColorRGB(GetDiodesArray(deviceDriver) + idRGB, (Ws2812b_RGB_t){10, 10, 10});
+    SetDiodeColorHSV(GetDiodesArray(deviceDriver) + idHSV, (Ws2812b_HSV_t){15, 15, 15});
+   
     TEST_ASSERT_EQUAL_INT(RGB, GetDiodesArray(deviceDriver)[idRGB].diodeColor.lastColor);
     TEST_ASSERT_EQUAL_INT(HSV, GetDiodesArray(deviceDriver)[idHSV].diodeColor.lastColor);
-    SetDiodeColorRGB(deviceDriver, idHSV, 10, 10, 10);
+
+    SetDiodeColorRGB(GetDiodesArray(deviceDriver) + idHSV, (Ws2812b_RGB_t){10, 10, 10});
     TEST_ASSERT_EQUAL_INT(RGB, GetDiodesArray(deviceDriver)[idHSV].diodeColor.lastColor);
 }
 

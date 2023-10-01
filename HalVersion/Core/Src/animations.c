@@ -20,74 +20,51 @@ typedef struct LedStrip_t
 static LedStrip_t obj = {{{0, 0, NULL}}, NULL};
 
 static DimmingDirection_e dimDir[MAX_SECTORS] = {ASCENDING};
-static Ws2812b_Color_t* colors_p;
 
-static void IterateThroughSectorAndSetHSV(Ws2812b_Driver_t* driver, Ws2812b_Sector_t sector, 
-uint16_t hue, uint8_t saturation, uint8_t value, int8_t addComponent)
-{
-    if (sector.startDiode > sector.endDiode)
-    {
-        for (uint32_t i = sector.endDiode; i > 0; i--)
-        {
-            SetDiodeColorHSV(driver, i, hue, saturation, value + addComponent);
-        }
-        SetDiodeColorHSV(driver, 0, hue, saturation, value + addComponent);
-        for (uint32_t i = WS2812B_DIODES - 1; i >= sector.startDiode; i--)
-        {
-            SetDiodeColorHSV(driver, i, hue, saturation, value + addComponent);
-        }
-    }
-    else
-    {
-        for (uint32_t i = sector.endDiode; i > sector.startDiode; i--)
-        {
-            SetDiodeColorHSV(driver, i, hue, saturation, value + addComponent);
-        }
-        SetDiodeColorHSV(driver, sector.startDiode, hue, saturation, value + addComponent);
-    }    
-}
 
 static void NoAnimation(Ws2812b_Driver_t* driver, uint32_t sectorId)
 {
-
+    (void)driver;
+    (void)sectorId;
 }
 
 static void Dimming(Ws2812b_Driver_t* driver, uint32_t sectorId)
 {
     Ws2812b_Sector_t* sectors = GetSectors(driver);
     // get current color val
-    uint16_t hue;
-    uint8_t saturation, value;
-    GetDiodeColorHSV(driver, sectors[sectorId].startDiode, &hue, &saturation, &value);
-    if (value == 0)
+    Ws2812b_HSV_t hsv;
+    hsv = GetDiodeColorHSV(sectors[sectorId].firstDiode);
+    if (hsv.value == 0)
         dimDir[sectorId] = ASCENDING;
-    if (value == 100)
+    if (hsv.value == 100)
         dimDir[sectorId] = DESCENDING;
-    if (dimDir[sectorId] == ASCENDING)
+    hsv.value += dimDir[sectorId];
+    Ws2812b_Diode_t* iter;
+    for (iter = sectors[sectorId].firstDiode; iter != sectors[sectorId].lastDiode; iter = iter->next)
     {
-        IterateThroughSectorAndSetHSV(driver, sectors[sectorId], hue, saturation, value, 1);
+        SetDiodeColorHSV(iter, hsv);
     }
-    else
-    {
-        IterateThroughSectorAndSetHSV(driver, sectors[sectorId], hue, saturation, value, -1);
-    }
+    SetDiodeColorHSV(iter, hsv);
 }
 
 static void Rolling(Ws2812b_Driver_t* driver, uint32_t sectorId)
 {
     Ws2812b_Sector_t* sectors = GetSectors(driver);
-    uint8_t red, green, blue;
-    uint8_t tmpRed, tmpGreen, tmpBlue;
+    Ws2812b_RGB_t rgb, tmpRgb;
     
     // for rolling purpose RGB functions will be faster
     // because they don't need to calculate anything
-    GetDiodeColorRGB(driver, sectors[sectorId].endDiode, &tmpRed, &tmpGreen, &tmpBlue);
-    for (uint32_t i = sectors[sectorId].endDiode; i > sectors[sectorId].startDiode; i--)
+    
+    rgb = GetDiodeColorRGB(sectors[sectorId].firstDiode);
+
+    Ws2812b_Diode_t* iter;
+    for (iter = sectors[sectorId].firstDiode; iter != sectors[sectorId].lastDiode; iter = iter->next)
     {
-        GetDiodeColorRGB(driver, i - 1, &red, &green, &blue);
-        SetDiodeColorRGB(driver, i, red, green, blue);
+        tmpRgb = GetDiodeColorRGB(iter->next);
+        SetDiodeColorRGB(iter->next, rgb);
+        rgb = tmpRgb;
     }
-    SetDiodeColorRGB(driver, sectors[sectorId].startDiode, tmpRed, tmpGreen, tmpBlue);
+    SetDiodeColorRGB(iter->next, rgb);
 }
 
 LedStrip_t* LedStrip_initObject(void)
@@ -134,76 +111,43 @@ void SetHSVColorForSector(Ws2812b_Driver_t* this, uint32_t id, uint16_t hue, uin
 {
     Ws2812b_Sector_t sector = GetSectors(this)[id];
 
-    IterateThroughSectorAndSetHSV(this, sector, hue, saturation, value, 0);
+    Ws2812b_Diode_t* iter;
+    for (iter = sector.firstDiode; iter != sector.lastDiode; iter = iter->next)
+    {
+        SetDiodeColorHSV(iter, (Ws2812b_HSV_t){hue, saturation, value});
+    }
 }
 
 void SetRGBColorForSector(Ws2812b_Driver_t* this, uint32_t id, uint8_t red, uint8_t green, uint8_t blue)
 {
     Ws2812b_Sector_t sector = GetSectors(this)[id];
 
-    if (sector.startDiode > sector.endDiode)
+    Ws2812b_Diode_t* iter;
+    for (iter = sector.firstDiode; iter != sector.lastDiode; iter = iter->next)
     {
-        for (uint32_t i = sector.endDiode; i > 0; i--)
-        {
-            SetDiodeColorRGB(this, i, red, green, blue);
-        }
-        SetDiodeColorRGB(this, 0, red, green, blue);
-        for (uint32_t i = WS2812B_DIODES - 1; i >= sector.startDiode; i--)
-        {
-            SetDiodeColorRGB(this, i, red, green, blue);
-        }
+        SetDiodeColorRGB(iter, (Ws2812b_RGB_t){red, green, blue});
     }
-    else
-    {
-        for (uint32_t i = sector.endDiode; i > sector.startDiode; i--)
-        {
-            SetDiodeColorRGB(this, i, red, green, blue);
-        }
-        SetDiodeColorRGB(this, sector.startDiode, red, green, blue);
-    }
+    SetDiodeColorRGB(iter, (Ws2812b_RGB_t){red, green, blue});
 }
 
 void SetRainbowForSector(Ws2812b_Driver_t* this, uint32_t sectorID)
 {
     Ws2812b_Sector_t sector = GetSectors(this)[sectorID];
-    uint32_t diodesNum = sector.endDiode - sector.startDiode;
+    uint32_t diodesNum = 1;
+    for (Ws2812b_Diode_t* iter = sector.firstDiode; iter != sector.lastDiode; iter = iter->next)
+    {
+        diodesNum++;
+    }
     uint16_t step = 360 / diodesNum;
     uint32_t cnt = 0;
-    for (unsigned int i = sector.startDiode; i < sector.endDiode; i++)
+
+    Ws2812b_Diode_t* iter;
+    for (iter = sector.firstDiode; iter != sector.lastDiode; iter = iter->next)
     {
-        SetDiodeColorHSV(this, i, step * cnt, 100, 100);
+        SetDiodeColorHSV(iter, (Ws2812b_HSV_t){step * cnt, 100, 100});
         cnt++;
     }
-    if (sector.startDiode > sector.endDiode)
-    {
-        diodesNum = sector.endDiode + (WS2812B_DIODES - sector.startDiode) + 1;
-        step = 360 / diodesNum;
-        cnt = 0;
-        for (uint32_t i = sector.endDiode; i > 0; i--)
-        {
-            SetDiodeColorHSV(this, i, step * cnt, 100, 100);
-            cnt++;
-        }
-        SetDiodeColorHSV(this, 0, step * cnt, 100, 100);
-        cnt++;
-        for (uint32_t i = WS2812B_DIODES - 1; i >= sector.startDiode; i--)
-        {
-            SetDiodeColorHSV(this, i, step * cnt, 100, 100);
-            cnt++;
-        }
-    }
-    else
-    {
-        diodesNum = sector.endDiode - sector.startDiode;
-        step = 360 / diodesNum;
-        cnt = 0;
-        for (uint32_t i = sector.endDiode; i > sector.startDiode; i--)
-        {
-            SetDiodeColorHSV(this, i, step * cnt, 100, 100);
-            cnt++;
-        }
-        SetDiodeColorHSV(this, sector.startDiode, step * cnt, 100, 100);
-    }
+    SetDiodeColorHSV(iter, (Ws2812b_HSV_t){step * cnt, 100, 100});
 }
 
 void SetAnimation(LedStrip_t* this, Animation_e animationType, uint32_t id)

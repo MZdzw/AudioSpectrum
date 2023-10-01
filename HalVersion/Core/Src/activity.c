@@ -1,27 +1,22 @@
 #include "activity.h"
 
-static bool CheckOverflow(uint32_t number)
-{
-    if (number >= (UINT32_T_MAX - 2))
-        return true;
-    return false;
-}
-
 static bool CheckInsideUsedSector(Ws2812b_Driver_t* driver, uint32_t diodeNr)
 {
-    Ws2812b_Sector_t* tmp = GetSectors(driver);
+    Ws2812b_Sector_t* sectors = GetSectors(driver);
+    Ws2812b_Diode_t* diodes = GetDiodesArray(driver);
+
     for (uint8_t i = 0; i < MAX_SECTORS; i++)
     {
-        if (tmp[i].isUsed)
+        if (sectors[i].isUsed)
         {
-            if (tmp[i].startDiode > tmp[i].endDiode)
+            if (sectors[i].firstDiode > sectors[i].lastDiode)
             {
-                if (diodeNr >= tmp[i].startDiode || diodeNr <= tmp[i].endDiode)
+                if ((diodes + diodeNr) >= sectors[i].firstDiode || (diodes + diodeNr) <= sectors[i].lastDiode)
                     return true;
             }
             else
             {
-                if (diodeNr >= tmp[i].startDiode && diodeNr <= tmp[i].endDiode)
+                if ((diodes + diodeNr) >= sectors[i].firstDiode && (diodes + diodeNr) <= sectors[i].lastDiode)
                     return true;
             }
         }
@@ -89,7 +84,8 @@ static Activity_e ActivitySetDiodeHSV(LedStrip_t* leds, USBMsg_t* usbMsg)
     if (!CheckInsideUsedSector(driver, usbMsg->diodeID))
         return DIODE_ID_NOT_IN_USED_SECTOR;
 
-    SetDiodeColorHSV(driver, usbMsg->diodeID, usbMsg->hsvColor.hue, usbMsg->hsvColor.saturation, usbMsg->hsvColor.value);
+    SetDiodeColorHSV(GetDiodesArray(driver) + usbMsg->diodeID, 
+    (Ws2812b_HSV_t){usbMsg->hsvColor.hue, usbMsg->hsvColor.saturation, usbMsg->hsvColor.value});
 
     return OK;
 }
@@ -102,7 +98,8 @@ static Activity_e ActivitySetDiodeRGB(LedStrip_t* leds, USBMsg_t* usbMsg)
     if (!CheckInsideUsedSector(driver, usbMsg->diodeID))
         return DIODE_ID_NOT_IN_USED_SECTOR;
 
-    SetDiodeColorRGB(driver, usbMsg->diodeID, usbMsg->rgbColor.red, usbMsg->rgbColor.green, usbMsg->rgbColor.blue);
+    SetDiodeColorRGB(GetDiodesArray(driver) + usbMsg->diodeID, 
+    (Ws2812b_RGB_t){usbMsg->rgbColor.red, usbMsg->rgbColor.blue, usbMsg->rgbColor.blue});
 
     return OK;
 }
@@ -157,8 +154,9 @@ static Activity_e ActivitySetSectorSpawnDiode(LedStrip_t* leds, USBMsg_t* usbMsg
     if (!sectors[usbMsg->sectorID].isUsed)
         return SECTOR_ID_NOT_USED;
 
-    SetDiodeColorRGB(driver, sectors[usbMsg->sectorID].startDiode,
-    usbMsg->rgbColor.red, usbMsg->rgbColor.green, usbMsg->rgbColor.blue);
+    
+    SetDiodeColorRGB(sectors[usbMsg->sectorID].firstDiode, 
+    (Ws2812b_RGB_t){usbMsg->rgbColor.red, usbMsg->rgbColor.green, usbMsg->rgbColor.blue});
 
     return OK;
 }
