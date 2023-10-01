@@ -17,7 +17,7 @@ SPI_HandleTypeDef hspi1;
 typedef struct Ws2812b_Driver_t
 {
     SpiWs2812B_t* deviceBuffer;
-    Ws2812b_Color_t diodeColors[WS2812B_DIODES];
+    Ws2812b_Diode_t diodes[WS2812B_DIODES];
     Ws2812b_Sector_t sectors[MAX_SECTORS];
 } Ws2812b_Driver_t;
 #endif
@@ -27,42 +27,6 @@ static unsigned int activeSectors;
 //////
 
 //static functions
-static void GetSectorsRange(Ws2812b_Driver_t* this, uint32_t* start, uint32_t* end,
-                            uint32_t* startEdge, uint32_t* endEdge)
-{
-    *start = this->sectors[0].startDiode;
-    *end = this->sectors[0].endDiode;
-    *startEdge = UINT32_MAX;
-    *endEdge = 0;
-    for (uint8_t i = 0; i < MAX_SECTORS; i++)
-    {
-        if(this->sectors[i].isUsed)
-        {
-            if(this->sectors[i].startDiode <= this->sectors[i].endDiode)
-            {
-                if (this->sectors[i].startDiode < *start)
-                {
-                    *start = this->sectors[i].startDiode;
-                }
-                if (this->sectors[i].endDiode > *end)
-                {
-                    *end = this->sectors[i].endDiode;
-                }
-            }
-            else
-            {
-                if (this->sectors[i].startDiode < *startEdge)
-                {
-                    *startEdge = this->sectors[i].startDiode;
-                }
-                if (this->sectors[i].endDiode > *endEdge)
-                {
-                    *endEdge = this->sectors[i].endDiode;
-                }
-            }
-        }
-    }
-}
 
 static bool CheckOverlapping(const uint32_t newStartDiode, const uint32_t newEndDiode, 
                              const uint32_t startDiode, const uint32_t endDiode)
@@ -115,11 +79,39 @@ static void ResetSectorDiodesColor(Ws2812b_Driver_t* this, const uint32_t id)
         }
         SetDiodeColorRGB(this, this->sectors[id].startDiode, 0, 0, 0);
     }
+}
 
+static void SetNextPointers(Ws2812b_Diode_t* head, Ws2812b_Diode_t* tail, Ws2812b_Diode_t* array)
+{
+    Ws2812b_Diode_t* tmp = head;
+    if (head == tail)
+    {
+        head->next = tail;
+        return;
+    }
+
+    while (head != tail)
+    {
+        if (head == array + WS2812B_DIODES - 1)
+        {
+            head->next = array;
+            head = array;
+        }
+        else
+        {
+            head->next = head + 1;
+            head++;
+        }
+    }
+    head->next = tmp;
 }
 
 // Objects
-static Ws2812b_Driver_t obj = {0, {{0, 0, 0}}, {{0, 0, false}}};
+static Ws2812b_Driver_t obj = 
+{NULL,                                              // deviceDriver     
+{{{{0, 0, 0}, {0, 0, 0}, RGB}, NONE, NULL}},        // 1st{ -> "array"; 2nd{ -> "Ws2812b_Color_t"; 3rd{ -> "rgb"; 4th{ -> "red, green, blue"
+{{NULL, NULL, 0, 0, false}}};                       // sectors
+
 
 Ws2812b_Driver_t* Ws2812b_initObject(void)
 {
@@ -141,12 +133,23 @@ bool SetSector(Ws2812b_Driver_t* this, const uint32_t id, const uint32_t startDi
     if (activeSectors != 0)
     {
         uint32_t start, end, startEdge, endEdge;
-        GetSectorsRange(this, &start, &end, &startEdge, &endEdge);
-        if(CheckOverlapping(startDiode, endDiode, start, end) ||
-           CheckOverlapping(startDiode, endDiode, startEdge, endEdge))
-           return false;
+        for (uint8_t i = 0; i < MAX_SECTORS; i++)
+        {
+            if (i != id)
+            {
+                if (this->sectors[i].isUsed)
+                {
+                    if (CheckOverlapping(startDiode, endDiode, (this->sectors[i].firstDiode - this->diodes),
+                        (this->sectors[i].lastDiode - this->diodes)))
+                        return false;
+                }
+            }
+        }
     }
 
+    this->sectors[id].firstDiode = &(GetDiodesArray(this)[startDiode]);
+    this->sectors[id].lastDiode = &(GetDiodesArray(this)[endDiode]);
+    SetNextPointers(this->sectors[id].firstDiode, this->sectors[id].lastDiode, GetDiodesArray(this));
     this->sectors[id].startDiode = startDiode;
     this->sectors[id].endDiode = endDiode;
     this->sectors[id].isUsed = true;
@@ -162,6 +165,8 @@ bool RemoveSector(Ws2812b_Driver_t* this, const uint32_t id)
         return false;
     
     ResetSectorDiodesColor(this, id);
+    this->sectors[id].firstDiode = NULL;
+    this->sectors[id].lastDiode = NULL;
     this->sectors[id].startDiode = 0;
     this->sectors[id].endDiode = 0;
     this->sectors[id].isUsed = false;
@@ -172,10 +177,10 @@ bool RemoveSector(Ws2812b_Driver_t* this, const uint32_t id)
 
 static inline void SetDiodeColor(Ws2812b_Driver_t* this, uint32_t id, Ws2812b_RGB_t* colorRGB, Ws2812b_HSV_t* colorHSV, bool isHSVSet)
 {
-    this->diodeColors[id].rgb = *colorRGB;
+    this->diodes[id].diodeColor.rgb = *colorRGB;
     if (isHSVSet)
     {
-        this->diodeColors[id].hsv = *colorHSV;
+        this->diodes[id].diodeColor.hsv = *colorHSV;
     }
 }
 
@@ -202,7 +207,7 @@ void SetDiodeColorRGB(Ws2812b_Driver_t* this, uint32_t id, uint8_t red, uint8_t 
 {
     SetDiodeColor(this, id, &(Ws2812b_RGB_t){.red = red, .green = green, .blue = blue},
                   &(Ws2812b_HSV_t){0}, false);
-    this->diodeColors[id].lastColor = RGB;
+    this->diodes[id].diodeColor.lastColor = RGB;
 }
 
 void SetDiodeColorHSV(Ws2812b_Driver_t* this, uint32_t id, uint16_t hue, uint8_t saturation, uint8_t value)
@@ -267,23 +272,23 @@ void SetDiodeColorHSV(Ws2812b_Driver_t* this, uint32_t id, uint16_t hue, uint8_t
     colorRGB.blue = round((b + m) * 255);
 
     SetDiodeColor(this, id, &colorRGB, &colorHSV, true);
-    this->diodeColors[id].lastColor = HSV;
+    this->diodes[id].diodeColor.lastColor = HSV;
 }
 
 void GetDiodeColorRGB(Ws2812b_Driver_t* this, uint32_t id, uint8_t* red, uint8_t* green, uint8_t* blue)
 {
-    *red = this->diodeColors[id].rgb.red;
-    *green = this->diodeColors[id].rgb.green;
-    *blue = this->diodeColors[id].rgb.blue;
+    *red = this->diodes[id].diodeColor.rgb.red;
+    *green = this->diodes[id].diodeColor.rgb.green;
+    *blue = this->diodes[id].diodeColor.rgb.blue;
 }
 
 void GetDiodeColorHSV(Ws2812b_Driver_t* this, uint32_t id, uint16_t* hue, uint8_t* saturation, uint8_t* value)
 {
-    if (this->diodeColors[id].lastColor == HSV)
+    if (this->diodes[id].diodeColor.lastColor == HSV)
     {
-        *hue = this->diodeColors[id].hsv.hue;
-        *saturation = this->diodeColors[id].hsv.saturation;
-        *value = this->diodeColors[id].hsv.value;
+        *hue = this->diodes[id].diodeColor.hsv.hue;
+        *saturation = this->diodes[id].diodeColor.hsv.saturation;
+        *value = this->diodes[id].diodeColor.hsv.value;
         return;
     }
 
@@ -388,7 +393,7 @@ Ws2812b_Sector_t* GetSectors(Ws2812b_Driver_t* this)
 }
 
 
-Ws2812b_Color_t* GetDiodeColorsArray(Ws2812b_Driver_t* this)
+Ws2812b_Diode_t* GetDiodesArray(Ws2812b_Driver_t* this)
 {
-    return this->diodeColors;
+    return this->diodes;
 }

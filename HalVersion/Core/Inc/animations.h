@@ -9,11 +9,11 @@ typedef enum Animation_e
     ROLLING
 } Animation_e;
 
-typedef enum DimmingDirection_e
-{
-    DESCENDING,
-    ASCENDING
-} DimmingDirection_e;
+// typedef enum DimmingDirection_e
+// {
+//     DESCENDING,
+//     ASCENDING
+// } DimmingDirection_e;
 
 typedef void(*Animation)(Ws2812b_Driver_t*, uint32_t);
 

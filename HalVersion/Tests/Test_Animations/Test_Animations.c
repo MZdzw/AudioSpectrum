@@ -48,7 +48,7 @@ void Test_DriverNotNull(void)
 void Test_DimmingAscending(void)
 {
     // set initial color value on led strip
-    Ws2812b_Color_t* colorsArray = GetDiodeColorsArray(GetDriver(ledStrip));
+    Ws2812b_Diode_t* diodesArray = GetDiodesArray(GetDriver(ledStrip));
     Ws2812b_HSV_t expectedColorHSV[WS2812B_DIODES] = {{0, 0, 0}};
     for (unsigned int i = 0; i < WS2812B_DIODES; i++)
     {
@@ -64,7 +64,7 @@ void Test_DimmingAscending(void)
     Ws2812b_HSV_t actualHSVColorS[WS2812B_DIODES];
     for (unsigned int  i = 0; i < WS2812B_DIODES; i++)
     {
-        actualHSVColorS[i] = colorsArray[i].hsv;
+        actualHSVColorS[i] = diodesArray[i].diodeColor.hsv;
     }
     TEST_ASSERT_EQUAL_MEMORY_ARRAY(expectedColorHSV, actualHSVColorS, sizeof(Ws2812b_HSV_t), WS2812B_DIODES);
 }
@@ -85,11 +85,11 @@ void Test_DimmingDescending(void)
     Animation animation = GetAnimationFunPtr(GetAnimations(ledStrip), 0);
     SetDimDir(0, DESCENDING);
     animation(GetDriver(ledStrip), 0);
-    Ws2812b_Color_t* colorsArray = GetDiodeColorsArray(GetDriver(ledStrip));
+    Ws2812b_Diode_t* diodesArray = GetDiodesArray(GetDriver(ledStrip));
     Ws2812b_HSV_t actualHSVColorS[WS2812B_DIODES];
     for (unsigned int  i = 0; i < WS2812B_DIODES; i++)
     {
-        actualHSVColorS[i] = colorsArray[i].hsv;
+        actualHSVColorS[i] = diodesArray[i].diodeColor.hsv;
     }
     TEST_ASSERT_EQUAL_MEMORY_ARRAY(expectedColorHSV, actualHSVColorS, sizeof(Ws2812b_HSV_t), WS2812B_DIODES);
 }
@@ -122,11 +122,11 @@ void Test_Rolling(void)
     SetAnimation(ledStrip, ROLLING, 0);
     Animation animation = GetAnimationFunPtr(GetAnimations(ledStrip), 0);
     animation(GetDriver(ledStrip), 0);
-    Ws2812b_Color_t* colorsArray = GetDiodeColorsArray(GetDriver(ledStrip));
+    Ws2812b_Diode_t* diodesArray = GetDiodesArray(GetDriver(ledStrip));
     Ws2812b_RGB_t actualRGBColors[WS2812B_DIODES];
     for (unsigned int  i = 0; i < WS2812B_DIODES; i++)
     {
-        actualRGBColors[i] = colorsArray[i].rgb;
+        actualRGBColors[i] = diodesArray[i].diodeColor.rgb;
     }
     TEST_ASSERT_EQUAL_MEMORY_ARRAY(expectedColorRGB, actualRGBColors, sizeof(Ws2812b_RGB_t), WS2812B_DIODES);
 }

@@ -17,9 +17,11 @@ void setUp (void) /* Is run before every test, put unit init calls here. */
 void tearDown (void) /* Is run after every test, put unit clean-up calls here. */
 {
     // clear DiodeColors array
+    Ws2812b_Diode_t element = {{{0, 0, 0}, {0, 0, 0}, RGB}, NONE, NULL};
+    Ws2812b_Diode_t* diodesArrayToClean = GetDiodesArray(deviceDriver);
     for (uint32_t i = 0; i < WS2812B_DIODES; i++)
     {
-        SetDiodeColorRGB(deviceDriver, i, 0, 0, 0);
+        diodesArrayToClean[i] = element;
     }
     // clear spiBuffer after each test
     for (uint32_t i = 0; i < WS2812B_DIODES * SPI_BYTES_PER_WS2812B_BIT * 8 * 3 + 144; i++)
@@ -27,7 +29,7 @@ void tearDown (void) /* Is run after every test, put unit clean-up calls here. *
         setSpiBufferElement(GetDeviceBuffer(deviceDriver), 0, i);
     }
     // clear sectors
-    Ws2812b_Sector_t sector = {0, 0, false};
+    Ws2812b_Sector_t sector = {NULL, NULL, 0, 0, false};
     Ws2812b_Sector_t* sectorsToClear = GetSectors(deviceDriver);
     for (uint8_t i = 0; i < MAX_SECTORS; i++)
     {
@@ -43,15 +45,20 @@ void test_ObjectNotNullPtr(void)
 }
 
 // Check that all values inside diodeColors are equal (0,0,0)
-void test_DiodeColorsArrayClearAfterInit(void)
+void test_DiodesArrayClearAfterInit(void)
 {
+    Ws2812b_RGB_t actualArray[WS2812B_DIODES];
     for (uint32_t i = 0; i < WS2812B_DIODES; i++)
     {
         expectedArray[i].red = 0;
         expectedArray[i].green = 0;
         expectedArray[i].blue = 0;
+
+        actualArray[i].red = GetDiodesArray(deviceDriver)[i].diodeColor.rgb.red;
+        actualArray[i].green = GetDiodesArray(deviceDriver)[i].diodeColor.rgb.green;
+        actualArray[i].blue = GetDiodesArray(deviceDriver)[i].diodeColor.rgb.blue;
     }
-    TEST_ASSERT_EQUAL_MEMORY_ARRAY(expectedArray, GetDiodeColorsArray(deviceDriver), sizeof(Ws2812b_RGB_t), WS2812B_DIODES);
+    TEST_ASSERT_EQUAL_MEMORY_ARRAY(expectedArray, actualArray, sizeof(Ws2812b_RGB_t), WS2812B_DIODES);
 }
 
 // Check that after setting, will get the same value
@@ -302,6 +309,17 @@ void Test_CreateSectorOnEdgeAndAddNonOverlappingSectors(void)
     TEST_ASSERT_EQUAL_UINT(5, GetActiveSectors(deviceDriver));
 }
 
+// Create sector on edge and add next overlapping sector
+void Test_CreateSectorOnEdgeAndAddOverlappingSector(void)
+{
+    TEST_ASSERT_TRUE(RemoveSector(deviceDriver, 0));
+    TEST_ASSERT_EQUAL_UINT(0, GetActiveSectors(deviceDriver));
+    TEST_ASSERT_TRUE(SetSector(deviceDriver, 0, WS2812B_DIODES - 5, 5));
+    TEST_ASSERT_EQUAL_UINT(1, GetActiveSectors(deviceDriver));
+    TEST_ASSERT_FALSE(SetSector(deviceDriver, 1, 2, 10));
+    TEST_ASSERT_EQUAL_UINT(1, GetActiveSectors(deviceDriver));
+}
+
 // Create sector on edge and add next sector on edge
 void Test_CreateSectorOnEdgeAndAddAnotherSectorOnEdge(void)
 {
@@ -432,8 +450,75 @@ void Test_LastUsedColor(void)
     uint32_t idHSV = 10;
     SetDiodeColorRGB(deviceDriver, idRGB, 10, 10, 10);
     SetDiodeColorHSV(deviceDriver, idHSV, 15, 15, 15);
-    TEST_ASSERT_EQUAL_INT(RGB, GetDiodeColorsArray(deviceDriver)[idRGB].lastColor);
-    TEST_ASSERT_EQUAL_INT(HSV, GetDiodeColorsArray(deviceDriver)[idHSV].lastColor);
+    TEST_ASSERT_EQUAL_INT(RGB, GetDiodesArray(deviceDriver)[idRGB].diodeColor.lastColor);
+    TEST_ASSERT_EQUAL_INT(HSV, GetDiodesArray(deviceDriver)[idHSV].diodeColor.lastColor);
     SetDiodeColorRGB(deviceDriver, idHSV, 10, 10, 10);
-    TEST_ASSERT_EQUAL_INT(RGB, GetDiodeColorsArray(deviceDriver)[idHSV].lastColor);
+    TEST_ASSERT_EQUAL_INT(RGB, GetDiodesArray(deviceDriver)[idHSV].diodeColor.lastColor);
+}
+
+// Check that after init diodesArray members are set properly
+void Test_CheckThatAfterInitDeviceDriverIsSetProperly(void)
+{
+    Ws2812b_Color_t colorAfterInit = {{0, 0, 0}, {0, 0, 0}, RGB};
+    Ws2812b_Diode_t* diodesArr = GetDiodesArray(deviceDriver);
+    Ws2812b_Sector_t* sectorsArr = GetSectors(deviceDriver);
+
+    TEST_ASSERT_NOT_NULL(GetDeviceBuffer(deviceDriver));
+
+    
+    TEST_ASSERT_EQUAL_MEMORY(&colorAfterInit, &diodesArr[0].diodeColor, sizeof(Ws2812b_Color_t));
+}
+
+// Check that sectors pointers (and interface) are set correctly
+void Test_CheckSectorsPointers(void)
+{
+    Ws2812b_Sector_t* sectors = GetSectors(deviceDriver);
+    Ws2812b_Diode_t* diodes = GetDiodesArray(deviceDriver);
+
+    // after init there is only one active sector (with id 0 and from 0 to WS2812B_DIODES - 1))
+    TEST_ASSERT_EQUAL_PTR(diodes, sectors[0].firstDiode);
+    TEST_ASSERT_EQUAL_PTR(diodes + WS2812B_DIODES - 1, sectors[0].lastDiode);
+}
+
+void Test_CheckThatNextPointersAreOk(void)
+{
+    Ws2812b_Sector_t* sectors = GetSectors(deviceDriver);
+    Ws2812b_Diode_t* diodes = GetDiodesArray(deviceDriver);
+
+    RemoveSector(deviceDriver, 0);
+    SetSector(deviceDriver, 0, 5, 15);
+    SetSector(deviceDriver, 1, 17, 25);
+    SetSector(deviceDriver, 2, 27, 4);
+
+    // check for sector 0 if the pointers are good
+    TEST_ASSERT_EQUAL_PTR(diodes + 5, sectors[0].firstDiode);
+    TEST_ASSERT_EQUAL_PTR(diodes + 15, sectors[0].lastDiode);
+    for (uint8_t i = 5; i < 15; i++)
+    {
+        TEST_ASSERT_EQUAL_PTR(diodes + i + 1, diodes[i].next);
+    }
+    TEST_ASSERT_EQUAL_PTR(diodes + 5, diodes[15].next);
+
+    // check for sector 1 if the pointers are good
+    TEST_ASSERT_EQUAL_PTR(diodes + 17, sectors[1].firstDiode);
+    TEST_ASSERT_EQUAL_PTR(diodes + 25, sectors[1].lastDiode);
+    for (uint8_t i = 17; i < 25; i++)
+    {
+        TEST_ASSERT_EQUAL_PTR(diodes + i + 1, diodes[i].next);
+    }
+    TEST_ASSERT_EQUAL_PTR(diodes + 17, diodes[25].next);
+
+    // check for sector 2 if the pointers are good
+    TEST_ASSERT_EQUAL_PTR(diodes + 27, sectors[2].firstDiode);
+    TEST_ASSERT_EQUAL_PTR(diodes + 4, sectors[2].lastDiode);
+    for (uint8_t i = 27; i < WS2812B_DIODES - 1; i++)
+    {
+        TEST_ASSERT_EQUAL_PTR(diodes + i + 1, diodes[i].next);
+    }
+    TEST_ASSERT_EQUAL_PTR(diodes, diodes[WS2812B_DIODES - 1].next);
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        TEST_ASSERT_EQUAL_PTR(diodes + i + 1, diodes[i].next);
+    }
+    TEST_ASSERT_EQUAL_PTR(diodes + 27, diodes[4].next);
 }

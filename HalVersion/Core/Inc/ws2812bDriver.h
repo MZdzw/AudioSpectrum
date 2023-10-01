@@ -7,17 +7,17 @@
 #define MAX_SECTORS 5
 
 
-typedef struct Ws2812b_Sector_t
-{
-    unsigned int startDiode;
-    unsigned int endDiode;
-    bool isUsed;
-} Ws2812b_Sector_t;
-
 typedef enum ColorTypeLastUsed_e
 {
     RGB, HSV
 } ColorTypeLastUsed_e;
+
+typedef enum DimmingDirection_e
+{
+    DESCENDING,
+    ASCENDING,
+    NONE
+} DimmingDirection_e;
 
 typedef struct Ws2812b_RGB_t
 {
@@ -40,13 +40,30 @@ typedef struct Ws2812b_Color_t
     ColorTypeLastUsed_e lastColor; 
 } Ws2812b_Color_t;
 
+typedef struct Ws2812b_Diode_t
+{
+    Ws2812b_Color_t diodeColor;
+    DimmingDirection_e dimDirection;
+    struct Ws2812b_Diode_t* next;
+} Ws2812b_Diode_t;
+
+typedef struct Ws2812b_Sector_t
+{
+    Ws2812b_Diode_t* firstDiode;
+    Ws2812b_Diode_t* lastDiode;
+
+    unsigned int startDiode;
+    unsigned int endDiode;
+    bool isUsed;
+} Ws2812b_Sector_t;
+
 #ifndef TESTING
 typedef struct Ws2812b_Driver_t Ws2812b_Driver_t;
 #else
 typedef struct Ws2812b_Driver_t
 {
     SpiWs2812B_t* deviceBuffer;
-    Ws2812b_Color_t diodeColors[WS2812B_DIODES];
+    Ws2812b_Diode_t diodes[WS2812B_DIODES];
     Ws2812b_Sector_t sectors[MAX_SECTORS];
 } Ws2812b_Driver_t;
 #endif
@@ -73,7 +90,7 @@ void SendPartOfDeviceBuffer(Ws2812b_Driver_t* this, uint32_t diodes);
 
 Ws2812b_Sector_t* GetSectors(Ws2812b_Driver_t* this);
 
-Ws2812b_Color_t* GetDiodeColorsArray(Ws2812b_Driver_t* this);
+Ws2812b_Diode_t* GetDiodesArray(Ws2812b_Driver_t* this);
 
 
 #endif
