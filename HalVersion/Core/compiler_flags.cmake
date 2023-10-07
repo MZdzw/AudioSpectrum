@@ -54,4 +54,5 @@ set(CMAKE_LINKER "/usr/bin/arm-none-eabi-gcc")
 set(CMAKE_CXX_FLAGS "${CORE_FLAGS} ${CXX_FLAGS} ${CXX_WARNINGS}")
 set(CMAKE_C_FLAGS "${CORE_FLAGS} ${C_FLAGS} ${C_WARNINGS}")
 set(CMAKE_ASM_FLAGS "${ASM_FLAGS} ${CORE_FLAGS} ${CXX_WARNINGS}")
-set(CMAKE_C_LINK_EXECUTABLE "<CMAKE_LINKER> -larm_cortexM4lf_math ${CORE_FLAGS} ${LD_FLAGS} <OBJECTS> -o <TARGET>")
+# Be careful to link things in proper order
+set(CMAKE_C_LINK_EXECUTABLE "<CMAKE_LINKER> <OBJECTS> -o <TARGET> -larm_cortexM4lf_math ${CORE_FLAGS} ${LD_FLAGS}")

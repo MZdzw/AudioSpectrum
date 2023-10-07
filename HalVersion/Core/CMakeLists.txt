@@ -75,6 +75,8 @@ set(INCLUDES
         ${PROJ_PATH}/USB_DEVICE/Target/
         ${PROJ_PATH}/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc/
         ${PROJ_PATH}/Middlewares/ST/STM32_USB_Device_Library/Core/Inc
+        # ARM DSP
+        ${PROJ_PATH}/Drivers/CMSIS/DSP/Include/
 
         ${CMAKE_CURRENT_SOURCE_DIR}/Inc/ 
         )
@@ -98,6 +100,7 @@ set(STM32_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/Src/animations.c
         ${CMAKE_CURRENT_SOURCE_DIR}/Src/communication.c
         ${CMAKE_CURRENT_SOURCE_DIR}/Src/activity.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/Src/fft.c
 
         ${HAL_DRIVERS}
         ${USB_DRIVERS}
@@ -111,6 +114,7 @@ set(SYMBOLS
         -DSTM32F401xC
         -DDEBUG
         -DARM_MATH_CM4
+        -DUSE_HAL_DRIVER
         )
 
 include(compiler_flags.cmake)
