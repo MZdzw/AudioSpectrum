@@ -115,7 +115,7 @@ FFT_Sound_Properties_t CheckSound(void)
     {
         fftSoundProp.sound = (minRanges >= 3) ? LOW_SOUND : NO_SOUND;
     }
-    fftSoundProp.sound = NORMAL_SOUND;
+
     return fftSoundProp;
 }
 
