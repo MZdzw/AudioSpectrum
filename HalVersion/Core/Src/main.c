@@ -22,11 +22,14 @@
 #include "dma.h"
 #include "spi.h"
 #include "tim.h"
+#include "usb_device.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "animations.h"
+#include "communication.h"
+#include "activity.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -65,6 +68,7 @@ uint32_t ledCounter;
 uint32_t animationSpeedCnt;
 LedStrip_t* ledStrip;
 Animation animation;
+Communication_t* usb;
 /* USER CODE END 0 */
 
 /**
@@ -102,6 +106,7 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
+  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
   ledCounter = 0;
   animationSpeedCnt = 0;
@@ -110,13 +115,17 @@ int main(void)
   SetSector(GetDriver(ledStrip), 0, 0, 16);
   SetSector(GetDriver(ledStrip), 1, 18, WS2812B_DIODES - 1);
   SetAnimationSpeed(GetAnimations(ledStrip), 0, 5);
-  SetAnimationSpeed(GetAnimations(ledStrip), 1, 8);
+  SetAnimationSpeed(GetAnimations(ledStrip), 1, 10);
   SetAnimationFunPtr(GetAnimations(ledStrip), 1);
 
+  usb = Communication_InitObject();
+
   HAL_TIM_Base_Start_IT(&htim2);
-  // HAL_TIM_Base_Start(&htim3);
+  // HAL_TIM_Base_Start(&htim3);                 // tim3 triggers adc
   HAL_TIM_Base_Start_IT(&htim4);
-  // HAL_ADC_Start_DMA(&hadc1, AD_RES, 512); // You have to start ADC with DMA
+
+  USBMsg_t msg;
+  Activity_e action;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -126,6 +135,16 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    // HAL_Delay(1000);
+    // SendMsgUSB(usb, "jou\r\n");
+    if (CheckReceiveUSB(usb))
+    {
+      msg = DecodeMsg(usb);
+      if (msg.action < USB_PROPER_ACTIONS)
+      {
+        action = ActivateAction(ledStrip, &msg);
+      }
+    }   
   }
   /* USER CODE END 3 */
 }
@@ -191,16 +210,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 	}
 	else if (htim->Instance == TIM4)
 	{
-		if ((animationSpeedCnt % GetAnimationSpeed(GetAnimations(ledStrip), 0)) == 0)
-		{
-			// animation
-      animation = GetAnimationFunPtr(GetAnimations(ledStrip), 0);
-      animation(GetDriver(ledStrip), 0);
-		}
-    if ((animationSpeedCnt % GetAnimationSpeed(GetAnimations(ledStrip), 1)) == 0)
+    for (uint8_t i = 0; i < MAX_SECTORS; i++)
     {
-      animation = GetAnimationFunPtr(GetAnimations(ledStrip), 1);
-      animation(GetDriver(ledStrip), 1);
+      if (GetSectors(GetDriver(ledStrip))[i].isUsed)
+      {
+        if ((animationSpeedCnt % GetAnimationSpeed(GetAnimations(ledStrip), i)) == 0)
+        {
+          animation = GetAnimationFunPtr(GetAnimations(ledStrip), i);
+          animation(GetDriver(ledStrip), i);
+        }  
+      }
     }
 
     if (animationSpeedCnt >= 300)
