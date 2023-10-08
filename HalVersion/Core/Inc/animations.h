@@ -6,7 +6,8 @@ typedef enum Animation_e
 {
     NO_ANIMATION,
     DIMMING,
-    ROLLING
+    ROLLING,
+    ROLLING_NO_WRAPPING
 } Animation_e;
 
 // typedef enum DimmingDirection_e

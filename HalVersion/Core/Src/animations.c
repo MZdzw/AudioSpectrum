@@ -67,6 +67,26 @@ static void Rolling(Ws2812b_Driver_t* driver, uint32_t sectorId)
     SetDiodeColorRGB(iter->next, rgb);
 }
 
+static void RollingNoWrapping(Ws2812b_Driver_t* driver, uint32_t sectorId)
+{
+    Ws2812b_Sector_t* sectors = GetSectors(driver);
+    Ws2812b_RGB_t rgb, tmpRgb;
+    
+    // for rolling purpose RGB functions will be faster
+    // because they don't need to calculate anything
+    
+    rgb = GetDiodeColorRGB(sectors[sectorId].firstDiode);
+
+    Ws2812b_Diode_t* iter;
+    for (iter = sectors[sectorId].firstDiode; iter != sectors[sectorId].lastDiode; iter = iter->next)
+    {
+        tmpRgb = GetDiodeColorRGB(iter->next);
+        SetDiodeColorRGB(iter->next, rgb);
+        rgb = tmpRgb;
+    }
+    SetDiodeColorRGB(sectors[sectorId].firstDiode, (Ws2812b_RGB_t){0, 0, 0});
+}
+
 LedStrip_t* LedStrip_initObject(void)
 {
     obj.ledStripDriver = Ws2812b_initObject();
@@ -160,6 +180,10 @@ void SetAnimation(LedStrip_t* this, Animation_e animationType, uint32_t id)
     else if (animationType == ROLLING)
     {
         animationHolder[id].animation_p = Rolling;
+    }
+    else if (animationType == ROLLING_NO_WRAPPING)
+    {
+        animationHolder[id].animation_p = RollingNoWrapping;
     }
     else if (animationType == NO_ANIMATION)
     {
