@@ -8,8 +8,8 @@ static uint16_t musicADC[FFT_SAMPLES];
 static float fft_in_buf[FFT_SAMPLES];
 static float fft_out_buf[FFT_SAMPLES];
 static Spectrum freqs[FFT_SAMPLES >> 1];
-
 static Spectrum_State_e state;
+static Spectrum analyzedFreqs[7];
 
 static float complexABS(float real, float compl)
 {
@@ -77,6 +77,46 @@ void StartConversion(void)
 Spectrum_State_e GetFFTState(void)
 {
     return state;
+}
+
+FFT_Sound_Properties_t CheckSound(void)
+{
+    FFT_Sound_Properties_t fftSoundProp = {0, 1, NORMAL_SOUND};
+    analyzedFreqs[1] = freqs[1];
+    analyzedFreqs[2] = freqs[3];
+    analyzedFreqs[3] = freqs[6];
+    analyzedFreqs[4] = freqs[12];
+    analyzedFreqs[5] = freqs[23];
+    analyzedFreqs[6] = freqs[46];
+
+    uint8_t underTresholdCounter = 0;
+    uint8_t minRanges = 0;
+
+    for (uint8_t i = 1; i <= 6; i++)
+    {
+        if (analyzedFreqs[i] < 10)
+        {
+                underTresholdCounter++;
+        }
+        else if(analyzedFreqs[i] >= 10 && analyzedFreqs[i] < 30)
+        {
+                underTresholdCounter++;
+                minRanges++;
+        }
+
+        if (analyzedFreqs[i] >= fftSoundProp.maxVal)
+        {
+                fftSoundProp.maxVal = analyzedFreqs[i];
+                fftSoundProp.index = i;
+        }
+
+    }
+    if (underTresholdCounter == 6)
+    {
+        fftSoundProp.sound = (minRanges >= 3) ? LOW_SOUND : NO_SOUND;
+    }
+    fftSoundProp.sound = NORMAL_SOUND;
+    return fftSoundProp;
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
