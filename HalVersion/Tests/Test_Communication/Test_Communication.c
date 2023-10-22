@@ -2,7 +2,7 @@
 #include <string.h>
 #include "unity.h"
 #include "communication.h"
-#include "mock_usbd_cdc_if.h"
+#include "mock_usbInterface.h"
 
 Communication_t* usb;
 

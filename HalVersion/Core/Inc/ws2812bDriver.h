@@ -52,8 +52,8 @@ typedef struct Ws2812b_Sector_t
     Ws2812b_Diode_t* firstDiode;
     Ws2812b_Diode_t* lastDiode;
 
-    unsigned int startDiode;
-    unsigned int endDiode;
+    // unsigned int startDiode;
+    // unsigned int endDiode;
     bool isUsed;
 } Ws2812b_Sector_t;
 

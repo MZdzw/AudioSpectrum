@@ -95,6 +95,8 @@ set(STM32_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/Src/spi.c
         ${CMAKE_CURRENT_SOURCE_DIR}/Src/tim.c
 
+        ${CMAKE_CURRENT_SOURCE_DIR}/Src/spiInterface.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/Src/usbInterface.c
         ${CMAKE_CURRENT_SOURCE_DIR}/Src/spiBuffer.c
         ${CMAKE_CURRENT_SOURCE_DIR}/Src/ws2812bDriver.c
         ${CMAKE_CURRENT_SOURCE_DIR}/Src/animations.c

@@ -1,3 +1,4 @@
+#include "adc.h"
 #include "stm32f401xc.h"    // must be included before "arm_math.h" because of "__FPU_PRESENT" define
 #include "arm_math.h"
 #include "fft.h"

@@ -4,7 +4,7 @@
 #include "math.h"
 #include "unity.h"
 #include "ws2812bDriver.h"
-#include "mock_stm32f4xx_hal_spi.h"
+#include "mock_spiInterface.h"
 
 Ws2812b_Driver_t* deviceDriver;
 
@@ -29,7 +29,7 @@ void tearDown (void) /* Is run after every test, put unit clean-up calls here. *
         setSpiBufferElement(GetDeviceBuffer(deviceDriver), 0, i);
     }
     // clear sectors
-    Ws2812b_Sector_t sector = {NULL, NULL, 0, 0, false};
+    Ws2812b_Sector_t sector = {NULL, NULL, false};
     Ws2812b_Sector_t* sectorsToClear = GetSectors(deviceDriver);
     for (uint8_t i = 0; i < MAX_SECTORS; i++)
     {
@@ -87,7 +87,7 @@ void test_DeviceBufferFilledCorectly(void)
     uint8_t expectedBuffer[WS2812B_DIODES * SPI_BYTES_PER_WS2812B_BIT * 8 * 3 + 144] = {0};
     // At begining buffer all buffer elements should be equal zero
     TEST_ASSERT_EQUAL_UINT8_ARRAY(expectedBuffer, getSpiBufferPointer(GetDeviceBuffer(deviceDriver)), sizeof(expectedBuffer));
-    HAL_SPI_Transmit_DMA_IgnoreAndReturn(0);    // 0 means return OK
+    SendBufferOverSpi_CMockIgnore();
     uint32_t id = 4;
     Ws2812b_RGB_t rgb = {192, 0, 0};
     SetDiodeColorRGB(GetDiodesArray(deviceDriver) + id, rgb);
@@ -143,7 +143,7 @@ void test_DeviceBufferFirstElementFilledCorectly(void)
     uint8_t expectedBuffer[WS2812B_DIODES * SPI_BYTES_PER_WS2812B_BIT * 8 * 3 + 144] = {0};
     // At begining buffer all buffer elements should be equal zero
     TEST_ASSERT_EQUAL_UINT8_ARRAY(expectedBuffer, getSpiBufferPointer(GetDeviceBuffer(deviceDriver)), sizeof(expectedBuffer));
-    HAL_SPI_Transmit_DMA_IgnoreAndReturn(0);    // 0 means return OK
+    SendBufferOverSpi_CMockIgnore();
     uint32_t id = 0;
     Ws2812b_RGB_t rgb = {143, 189, 40};
     SetDiodeColorRGB(GetDiodesArray(deviceDriver) + id, rgb);
@@ -186,7 +186,7 @@ void test_DeviceBufferLastElementFilledCorectly(void)
     uint8_t expectedBuffer[WS2812B_DIODES * SPI_BYTES_PER_WS2812B_BIT * 8 * 3 + 144] = {0};
     // At begining buffer all buffer elements should be equal zero
     TEST_ASSERT_EQUAL_UINT8_ARRAY(expectedBuffer, getSpiBufferPointer(GetDeviceBuffer(deviceDriver)), sizeof(expectedBuffer));
-    HAL_SPI_Transmit_DMA_IgnoreAndReturn(0);    // 0 means return OK
+    // HAL_SPI_Transmit_DMA_IgnoreAndReturn(0);    // 0 means return OK
     uint32_t id = WS2812B_DIODES - 1;
     Ws2812b_RGB_t rgb = {200, 222, 153};
     SetDiodeColorRGB(GetDiodesArray(deviceDriver) + id, rgb);
@@ -231,13 +231,13 @@ void test_DeviceBufferLastElementFilledCorectly(void)
 void Test_CheckIfSectorsAreWellInitialized(void)
 {
     Ws2812b_Sector_t* sector = GetSectors(deviceDriver);
-    TEST_ASSERT_EQUAL_UINT32(0, sector[0].startDiode);
-    TEST_ASSERT_EQUAL_UINT32(WS2812B_DIODES - 1, sector[0].endDiode);
+    TEST_ASSERT_EQUAL_PTR(&(GetDiodesArray(deviceDriver)[0]), sector[0].firstDiode);
+    TEST_ASSERT_EQUAL_PTR(&(GetDiodesArray(deviceDriver)[WS2812B_DIODES - 1]), sector[0].lastDiode);
     TEST_ASSERT_TRUE(sector[0].isUsed);
     for (uint8_t i = 1; i < MAX_SECTORS; i++)
     {
-        TEST_ASSERT_EQUAL_UINT32(0, sector[i].startDiode);
-        TEST_ASSERT_EQUAL_UINT32(0, sector[i].endDiode);
+        TEST_ASSERT_EQUAL_PTR(NULL, sector[i].firstDiode);
+        TEST_ASSERT_EQUAL_PTR(NULL, sector[i].lastDiode);
         TEST_ASSERT_FALSE(sector[i].isUsed);
     }
     TEST_ASSERT_EQUAL_UINT(1, GetActiveSectors(deviceDriver));
@@ -363,7 +363,6 @@ void Test_SettingHSVSetsRGBCorrectly(void)
     Ws2812b_RGB_t rgbExpected = {61, 102, 41};
 
     SetDiodeColorRGB(GetDiodesArray(deviceDriver) + id, rgbExpected);
-    uint8_t red, green, blue;
     Ws2812b_RGB_t rgbActual;
     rgbActual = GetDiodeColorRGB(GetDiodesArray(deviceDriver) + id);
 
@@ -437,7 +436,6 @@ void Test_CheckThatAfterInitDeviceDriverIsSetProperly(void)
 {
     Ws2812b_Color_t colorAfterInit = {{0, 0, 0}, {0, 0, 0}, RGB};
     Ws2812b_Diode_t* diodesArr = GetDiodesArray(deviceDriver);
-    Ws2812b_Sector_t* sectorsArr = GetSectors(deviceDriver);
 
     TEST_ASSERT_NOT_NULL(GetDeviceBuffer(deviceDriver));
 

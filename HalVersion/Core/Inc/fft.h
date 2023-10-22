@@ -1,6 +1,5 @@
 #ifndef __FFT_H__
 #define __FFT_H__
-#include "adc.h"
 
 #define FFT_SAMPLES 512
 
@@ -34,6 +33,6 @@ void StartConversion(void);
 Spectrum_State_e GetFFTState(void);
 FFT_Sound_Properties_t CheckSound(void);
 
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc);
+// void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc);
 
 #endif

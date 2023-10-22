@@ -22,7 +22,7 @@ set(CXX_FLAGS "-std=gnu++17 -O0 -g -fno-rtti -fno-exceptions -fverbose-asm -MMD"
 # fverbose-asm - additional comments for generated assembler code
 # -MMD - create dependency files
 # set(C_FLAGS "-std=gnu89 -O0 -ffunction-sections -fdata-sections -fverbose-asm -MMD")
-set(C_FLAGS "-O0 -ffunction-sections -fdata-sections -fstack-usage -MMD -MP")
+set(C_FLAGS "-O3 -ffunction-sections -fdata-sections -fstack-usage -MMD -MP")
 
 set(ASM_FLAGS "-x assembler-with-cpp")
 

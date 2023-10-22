@@ -1,5 +1,6 @@
 #include "communication.h"
 #include "string.h"
+#include "usbInterface.h"
 
 #ifndef TESTING
 typedef struct Communication_t
@@ -12,11 +13,6 @@ typedef struct Communication_t
 #endif
 
 static uint8_t lookUpTableUSBLength[USB_PROPER_ACTIONS] = {14, 22, 21, 20, 18, 17, 14, 17, 18, 14, 14, 14};
-
-static inline void SendUSB(Communication_t* this)
-{
-    CDC_Transmit_FS((uint8_t*)this->bufferTX, this->msgLen);
-}
 
 Communication_t obj = {{0}, {0}, 0, 0};
 
@@ -51,7 +47,7 @@ void SendMsgUSB(Communication_t* this, const char* msg)
 {
     memcpy(this->bufferTX, msg, strlen(msg));
     this->msgLen = strlen(msg);
-    SendUSB(this);
+    SendBufferOverUsb(this->bufferTX, this->msgLen);
 }
 
 bool CheckReceiveUSB(Communication_t* this)

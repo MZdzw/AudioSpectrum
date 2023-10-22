@@ -32,8 +32,6 @@ void setUp (void) /* Is run before every test, put unit init calls here. */
 
     for (unsigned int i = 0; i < MAX_SECTORS; i++)
     {
-        sectorsMocked[i].startDiode = 0;
-        sectorsMocked[i].endDiode = 0;
         sectorsMocked[i].isUsed = false;
 
         animationsArray[i].sectorId = 0;
@@ -45,8 +43,6 @@ void tearDown (void) /* Is run after every test, put unit clean-up calls here. *
 {
     for (unsigned int i = 0; i < MAX_SECTORS; i++)
     {
-        sectorsMocked[i].startDiode = 0;
-        sectorsMocked[i].endDiode = 0;
         sectorsMocked[i].isUsed = false;
     }
     Ws2812b_Color_t colorClear = {{0, 0, 0}, {0, 0, 0}, RGB};
@@ -90,7 +86,7 @@ void Test_CheckThatProperActivityIsSet(void)
     TEST_ASSERT_EQUAL_UINT8(OK, action);
 
     
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_ADD_SECTOR, .sectorID = 1, .diodesRange.startDiode = 21, .diodesRange.endDiode = 25}));
+    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_ADD_SECTOR, .sectorID = 1, .diodesRange = {21, 25}}));
     // SetSector_ExpectAndReturn(objWs2812b_Driver, 1, 21, 25, true);
     msg = DecodeMsg(objCommunication);
 
@@ -228,8 +224,6 @@ void Test_AddSector(void)
     // firstly we want to add sector when there is place for that
     // Act
     // prepare msg (relate to Test_communication.c file)
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 20;
     sectorsMocked[0].isUsed = true;
     
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
@@ -249,11 +243,7 @@ void Test_AddExisitngSector(void)
 {
     USBMsg_t msg;
     Activity_e action;
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 20;
     sectorsMocked[0].isUsed = true;
-    sectorsMocked[1].startDiode = 21;
-    sectorsMocked[1].endDiode = 25;
     sectorsMocked[1].isUsed = true;
 
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
@@ -291,11 +281,7 @@ void Test_AddOverlappingSector(void)
     // firstly we want to add sector when there is place for that
     // Act
     // prepare msg (relate to Test_communication.c file)
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 5;
     sectorsMocked[0].isUsed = true;
-    sectorsMocked[1].startDiode = 8;
-    sectorsMocked[1].endDiode = 20;
     sectorsMocked[1].isUsed = true;
 
     // we want add sector which overlapping with other 
@@ -317,8 +303,6 @@ void Test_ActivitySetDiodeColorHSV(void)
 
     sectorsMocked[0].firstDiode = diodesMocked;
     sectorsMocked[0].lastDiode = diodesMocked + WS2812B_DIODES - 1;
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = WS2812B_DIODES - 1;
     sectorsMocked[0].isUsed = true;
 
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
@@ -343,8 +327,6 @@ void Test_ActivitySetDiodeColorHSVDiodeIDOutOfRange(void)
     USBMsg_t msg;
     Activity_e action;
 
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 30;
     sectorsMocked[0].isUsed = true;
 
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
@@ -366,8 +348,6 @@ void Test_ActivitySetDiodeColorHSVValuesOutOfRange(void)
 
     sectorsMocked[0].firstDiode = diodesMocked;
     sectorsMocked[0].lastDiode = diodesMocked + WS2812B_DIODES - 1;
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = WS2812B_DIODES - 1;
     sectorsMocked[0].isUsed = true;
 
     DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_DIODE_COLOR_HSV, .diodeID = 9, .hsvColor = {400, 100, 100}}));
@@ -390,13 +370,9 @@ void Test_ActivitySetDiodeColorHSVInNotUsedSector(void)
 
     sectorsMocked[0].firstDiode = diodesMocked;
     sectorsMocked[0].lastDiode = diodesMocked + 14;
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 14;
     sectorsMocked[0].isUsed = true;
     sectorsMocked[1].firstDiode = diodesMocked + 17;
     sectorsMocked[1].lastDiode = diodesMocked + 22;
-    sectorsMocked[1].startDiode = 17;
-    sectorsMocked[1].endDiode = 22;
     sectorsMocked[1].isUsed = true;
 
     DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_DIODE_COLOR_HSV, .diodeID = 25, .hsvColor = {20, 100, 100}}));
@@ -416,8 +392,6 @@ void Test_ActivitySetDiodeColorRGB(void)
     USBMsg_t msg;
     Activity_e action;
 
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 30;
     sectorsMocked[0].isUsed = true;
 
     DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_DIODE_COLOR_RGB, .diodeID = 9, .rgbColor = {200, 100, 100}}));
@@ -438,8 +412,6 @@ void Test_ActivitySetDiodeColorRGBDiodeIDOutOfRange(void)
     USBMsg_t msg;
     Activity_e action;
 
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 30;
     sectorsMocked[0].isUsed = true;
 
     DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_DIODE_COLOR_RGB, .diodeID = WS2812B_DIODES + 10, .hsvColor = {200, 100, 100}}));
@@ -457,11 +429,7 @@ void Test_ActivitySetDiodeColorRGBInNotUsedSector(void)
     USBMsg_t msg;
     Activity_e action;
 
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 14;
     sectorsMocked[0].isUsed = true;
-    sectorsMocked[1].startDiode = 17;
-    sectorsMocked[1].endDiode = 22;
     sectorsMocked[1].isUsed = true;
 
     DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_DIODE_COLOR_RGB, .diodeID = 28, .rgbColor = {100, 100, 100}}));
@@ -480,8 +448,6 @@ void Test_ActivitySetSectorColorHSV(void)
     USBMsg_t msg;
     Activity_e action;
 
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 30;
     sectorsMocked[0].isUsed = true;
 
     DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_HSV, .sectorID = 0, .hsvColor = {200, 100, 100}}));
@@ -501,8 +467,6 @@ void Test_ActivitySetSectorColorHSVSectorIDOutOfRange(void)
     USBMsg_t msg;
     Activity_e action;
 
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 30;
     sectorsMocked[0].isUsed = true;
 
     DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_HSV, .sectorID = MAX_SECTORS + 3, .hsvColor = {200, 100, 100}}));
@@ -520,14 +484,8 @@ void Test_ActivitySetSectorColorHSVValuesOutOfRange(void)
     USBMsg_t msg;
     Activity_e action;
 
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 10;
     sectorsMocked[0].isUsed = true;
-    sectorsMocked[1].startDiode = 11;
-    sectorsMocked[1].endDiode = 18;
     sectorsMocked[1].isUsed = true;
-    sectorsMocked[2].startDiode = 20;
-    sectorsMocked[2].endDiode = 28;
     sectorsMocked[2].isUsed = true;
 
     DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_HSV, .sectorID = 2, .hsvColor = {400, 100, 100}}));
@@ -546,14 +504,8 @@ void Test_ActivitySetSectorColorHSVInNotUsedSector(void)
     USBMsg_t msg;
     Activity_e action;
 
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 10;
     sectorsMocked[0].isUsed = true;
-    sectorsMocked[1].startDiode = 11;
-    sectorsMocked[1].endDiode = 18;
     sectorsMocked[1].isUsed = true;
-    sectorsMocked[2].startDiode = 20;
-    sectorsMocked[2].endDiode = 28;
     sectorsMocked[2].isUsed = true;
 
     DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_HSV, .sectorID = 3, .hsvColor = {250, 100, 100}}));
@@ -572,8 +524,6 @@ void Test_ActivitySetSectorColorRGB(void)
     USBMsg_t msg;
     Activity_e action;
 
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 30;
     sectorsMocked[0].isUsed = true;
 
     DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_RGB, .sectorID = 0, .rgbColor = {200, 100, 100}}));
@@ -593,8 +543,6 @@ void Test_ActivitySetSectorColorRGBSectorIDOutOfRange(void)
     USBMsg_t msg;
     Activity_e action;
 
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 30;
     sectorsMocked[0].isUsed = true;
 
     DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_RGB, .sectorID = MAX_SECTORS + 3, .rgbColor = {200, 100, 100}}));
@@ -612,14 +560,8 @@ void Test_ActivitySetSectorColorRGBInNotUsedSector(void)
     USBMsg_t msg;
     Activity_e action;
     
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 10;
     sectorsMocked[0].isUsed = true;
-    sectorsMocked[1].startDiode = 11;
-    sectorsMocked[1].endDiode = 18;
     sectorsMocked[1].isUsed = true;
-    sectorsMocked[2].startDiode = 20;
-    sectorsMocked[2].endDiode = 28;
     sectorsMocked[2].isUsed = true;
 
     DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_RGB, .sectorID = 3, .rgbColor = {250, 100, 100}}));
@@ -638,8 +580,6 @@ void Test_ActivitySetSectorColorRainbow(void)
     USBMsg_t msg;
     Activity_e action;
     
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 10;
     sectorsMocked[0].isUsed = true;
 
     DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_RAINBOW, .sectorID = 0}));
@@ -659,8 +599,6 @@ void Test_ActivitySetSectorColorRainbowSectorIdOutOfRange(void)
     USBMsg_t msg;
     Activity_e action;
     
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 10;
     sectorsMocked[0].isUsed = true;
 
     DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_RAINBOW, .sectorID = 7}));
@@ -678,11 +616,7 @@ void Test_ActivitySetSectorColorRainbowSectorIdNotInUse(void)
     USBMsg_t msg;
     Activity_e action;
     
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 10;
     sectorsMocked[0].isUsed = true;
-    sectorsMocked[1].startDiode = 11;
-    sectorsMocked[1].endDiode = 20;
     sectorsMocked[1].isUsed = true;
 
     DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_RAINBOW, .sectorID = 2}));
@@ -703,8 +637,6 @@ void Test_ActivitySetSectorSpawnDiode(void)
     
     sectorsMocked[0].firstDiode = diodesMocked;
     sectorsMocked[0].lastDiode = diodesMocked + 10;
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 10;
     sectorsMocked[0].isUsed = true;
 
     DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_SPAWN_DIODE_COLOR, .sectorID = 0, .rgbColor = {200, 120, 60}}));
@@ -726,8 +658,6 @@ void Test_ActivitySetSectorSpawnDiodeSectorIdOutOfRange(void)
     USBMsg_t msg;
     Activity_e action;
     
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 10;
     sectorsMocked[0].isUsed = true;
 
     DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_SPAWN_DIODE_COLOR, .sectorID = MAX_SECTORS, .rgbColor = {200, 120, 60}}));
@@ -745,11 +675,7 @@ void Test_ActivitySetSectorSpawnDiodeSectorIdNotInUse(void)
     USBMsg_t msg;
     Activity_e action;
     
-    sectorsMocked[0].startDiode = 0;
-    sectorsMocked[0].endDiode = 10;
     sectorsMocked[0].isUsed = true;
-    sectorsMocked[1].startDiode = 12;
-    sectorsMocked[1].endDiode = 25;
     sectorsMocked[1].isUsed = true;
 
     DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_SPAWN_DIODE_COLOR, .sectorID = 2, .rgbColor = {200, 120, 60}}));

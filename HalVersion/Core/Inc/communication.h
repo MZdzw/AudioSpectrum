@@ -1,11 +1,7 @@
 #ifndef __COMMUNICATION_H__
 #define __COMMUNICATION_H__
 #include <stdbool.h>
-#ifndef TESTING
-#include "usbd_cdc_if.h"
-#else
-#include "mock_usbd_cdc_if.h"
-#endif
+#include <stdint.h>
 
 #define MAX_LENGTH 22
 #define UINT8_t_MAX 255

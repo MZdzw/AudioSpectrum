@@ -71,8 +71,6 @@ LedStrip_t* ledStrip;
 Animation animation;
 Communication_t* usb;
 
-// to delete after testing
-static int indexColor[7] = {0, 310, 58, 230, 110, 160, 20};
 /* USER CODE END 0 */
 
 /**
@@ -116,12 +114,11 @@ int main(void)
   animationSpeedCnt = 0;
   ledStrip = LedStrip_initObject();
   RemoveSector(GetDriver(ledStrip), 0);
-  SetSector(GetDriver(ledStrip), 0, 0, 16);
-  SetSector(GetDriver(ledStrip), 1, 18, WS2812B_DIODES - 1);
+  SetSector(GetDriver(ledStrip), 0, 0, 4);
+  SetSector(GetDriver(ledStrip), 1, 6, WS2812B_DIODES - 1);
   SetAnimationSpeed(GetAnimations(ledStrip), 0, 5);
   SetAnimationSpeed(GetAnimations(ledStrip), 1, 40);
-  // SetAnimationFunPtr(GetAnimations(ledStrip), 1);
-  SetAnimation(ledStrip, ROLLING_NO_WRAPPING, 1);
+  SetAnimation(ledStrip, ROLLING_SOUND_REVERSED, 1);
 
   usb = Communication_InitObject();
 
@@ -229,20 +226,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
       {
         if ((animationSpeedCnt % GetAnimationSpeed(GetAnimations(ledStrip), i)) == 0)
         {
-          FFT_Sound_Properties_t tmp = CheckSound();
-          if (i == 1)
-          {
-            if (tmp.sound == NORMAL_SOUND)
-            {
-              SetDiodeColorHSV(&(GetDiodesArray(GetDriver(ledStrip))[18]), 
-              (Ws2812b_HSV_t){.hue = indexColor[tmp.index], .saturation = 100, .value = 100});
-            }
-            else if (tmp.sound == LOW_SOUND)
-            {
-              SetDiodeColorHSV(&(GetDiodesArray(GetDriver(ledStrip))[18]), 
-              (Ws2812b_HSV_t){.hue = indexColor[tmp.index], .saturation = 100, .value = 100});
-            }
-          }
           animation = GetAnimationFunPtr(GetAnimations(ledStrip), i);
           animation(GetDriver(ledStrip), i);
         }  

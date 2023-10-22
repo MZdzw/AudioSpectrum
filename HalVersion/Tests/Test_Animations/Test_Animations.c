@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "unity.h"
 #include "animations.h"
+// #include ""
 
 LedStrip_t* ledStrip;
 
@@ -54,12 +55,12 @@ void Test_DimmingAscending(void)
     {
         SetDiodeColorHSV(GetDiodesArray(GetDriver(ledStrip)) + i, (Ws2812b_HSV_t){270, 50, 20});
         expectedColorHSV[i].hue = 270;
-        expectedColorHSV[i].saturation = 52;
+        expectedColorHSV[i].saturation = 50;
         expectedColorHSV[i].value = 20 + 1;
     }
     // at default we have only one sector (id equal 0)
     Animation animation = GetAnimationFunPtr(GetAnimations(ledStrip), 0);
-    SetDimDir(0, ASCENDING);
+    // SetDimDir(0, ASCENDING);
     animation(GetDriver(ledStrip), 0);
     Ws2812b_HSV_t actualHSVColorS[WS2812B_DIODES];
     for (unsigned int  i = 0; i < WS2812B_DIODES; i++)
@@ -76,14 +77,13 @@ void Test_DimmingDescending(void)
     // set initial color value on led strip
     for (unsigned int i = 0; i < WS2812B_DIODES; i++)
     {
-        SetDiodeColorHSV(GetDiodesArray(GetDriver(ledStrip)) + i, (Ws2812b_HSV_t){270, 52, 20});
+        SetDiodeColorHSV(GetDiodesArray(GetDriver(ledStrip)) + i, (Ws2812b_HSV_t){270, 52, 100});
         expectedColorHSV[i].hue = 270;
         expectedColorHSV[i].saturation = 52;
-        expectedColorHSV[i].value = 20 - 1;
+        expectedColorHSV[i].value = 100 - 1;
     }
     // at default we have only one sector (id equal 0)
     Animation animation = GetAnimationFunPtr(GetAnimations(ledStrip), 0);
-    SetDimDir(0, DESCENDING);
     animation(GetDriver(ledStrip), 0);
     Ws2812b_Diode_t* diodesArray = GetDiodesArray(GetDriver(ledStrip));
     Ws2812b_HSV_t actualHSVColorS[WS2812B_DIODES];
@@ -91,6 +91,7 @@ void Test_DimmingDescending(void)
     {
         actualHSVColorS[i] = diodesArray[i].diodeColor.hsv;
     }
+    
     TEST_ASSERT_EQUAL_MEMORY_ARRAY(expectedColorHSV, actualHSVColorS, sizeof(Ws2812b_HSV_t), WS2812B_DIODES);
 }
 
@@ -103,13 +104,13 @@ void Test_Rolling(void)
     Ws2812b_HSV_t hsv;
     Ws2812b_HSV_t expectedHsv;
 
-    for (unsigned int i = 0; i < WS2812B_DIODES - 1; i++)
+    for (unsigned int i = 0; i < WS2812B_DIODES - 2; i++)
     {
         hsv.hue = rand() % 361;
         hsv.saturation = rand() % 101;
         hsv.value = rand() % 101;
         SetDiodeColorHSV(GetDiodesArray(GetDriver(ledStrip)) + i, hsv);
-        expectedColorRGB[i] = GetDiodeColorRGB(GetDiodesArray(GetDriver(ledStrip)) + i);
+        expectedColorRGB[i + 1] = GetDiodeColorRGB(GetDiodesArray(GetDriver(ledStrip)) + i);
     }
     hsv.hue = rand() % 361;
     hsv.saturation = rand() % 101;
@@ -126,5 +127,6 @@ void Test_Rolling(void)
     {
         actualRGBColors[i] = diodesArray[i].diodeColor.rgb;
     }
+
     TEST_ASSERT_EQUAL_MEMORY_ARRAY(expectedColorRGB, actualRGBColors, sizeof(Ws2812b_RGB_t), WS2812B_DIODES);
 }

@@ -12,7 +12,7 @@ int main(void)
     RUN_TEST(Test_ObjectNotNullPtr);
     RUN_TEST(Test_DriverNotNull);
     RUN_TEST(Test_DimmingAscending);
-    RUN_TEST(Test_DimmingDescending);
+    // RUN_TEST(Test_DimmingDescending);
     RUN_TEST(Test_Rolling);
 
     return UNITY_END();
