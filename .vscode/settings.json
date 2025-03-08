@@ -12,6 +12,6 @@
         "type_traits": "c"
         "arm_math.h": "c"
     },
-    "cmake.sourceDirectory": "/home/marzd/Documents/Projects/stm32/AudioSpectrum/HalVersion",
+    "cmake.sourceDirectory": "${workspaceFolder}",
     "cmake.configureOnOpen": true
 }

@@ -1,6 +1,6 @@
 .metadata/
-HalVersion/Build/
-HalVersion/Core/Build/
-HalVersion/.settings/
-HalVersion/Tests/cmock_files/
-HalVersion/Tests/Build/
+Build/
+Core/Build/
+.settings/
+Tests/cmock_files/
+Tests/Build/
