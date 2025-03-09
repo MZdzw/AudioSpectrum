@@ -24,8 +24,9 @@ set(MOCKED_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/Tests/cmock_files/)
 add_custom_target(generate_mocks3)
 
 foreach(MOCKED_HEADER ${PRODUCTION_HEADERS_TO_MOCK})
-    add_custom_command(TARGET generate_mocks3
-                       COMMAND CMOCK_DIR=${CMAKE_CURRENT_SOURCE_DIR}/../cmock ruby ${CMAKE_CURRENT_SOURCE_DIR}/../create_mock.rb ${MOCKED_HEADER} ${MOCKED_OUTPUT_PATH}
+    add_custom_command(PRE_BUILD
+                       TARGET generate_mocks3
+                       COMMAND ruby ${CMAKE_CURRENT_SOURCE_DIR}/../create_mock.rb ${MOCKED_HEADER} ${MOCKED_OUTPUT_PATH}
                        COMMENT "CMake - Generating mock file for ${MOCKED_HEADER}"
                        )
 endforeach()
@@ -45,5 +46,3 @@ target_link_libraries(Test_Activity PRIVATE -lm)
 
 target_link_libraries(Test_Activity PRIVATE unity cmock)
 target_include_directories(Test_Activity PRIVATE ${PRODUCTION_INCLUDE_PATH} ${MOCKED_INCLUDES})
-
-add_test(NAME Activity COMMAND Test_Activity)

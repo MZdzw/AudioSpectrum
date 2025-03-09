@@ -1,4 +1,5 @@
-require "#{ENV['CMOCK_DIR']}/lib/cmock"
+require "#{ENV['CMOCK_DIR']}"
+#require "C:\\Users\\marzd\\Documents\\AudioSpectrum\\Tests\\cmock\\lib\\cmock"
 
 raise 'Header file to mock must be specified!' unless ARGV.length >= 1
 

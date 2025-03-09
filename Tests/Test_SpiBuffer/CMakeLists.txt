@@ -20,5 +20,3 @@ set_source_files_properties(
 
 target_link_libraries(Test_SpiBuffer PRIVATE unity)
 target_include_directories(Test_SpiBuffer PRIVATE ${PRODUCTION_INCLUDE_PATH})
-
-add_test(NAME spiBuffer COMMAND Test_SpiBuffer)

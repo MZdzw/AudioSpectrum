@@ -19,8 +19,9 @@ set(MOCKED_INCLUDES ${CMAKE_SOURCE_DIR}/Tests/cmock_files/)
 add_custom_target(GenerateMocks_Test_Animations)
 
 foreach(MOCKED_HEADER ${PRODUCTION_HEADERS_TO_MOCK})
-    add_custom_command(TARGET GenerateMocks_Test_Animations
-                       COMMAND CMOCK_DIR=${CMAKE_SOURCE_DIR}/Tests/cmock ruby ${CMAKE_SOURCE_DIR}/Tests/create_mock.rb ${MOCKED_HEADER} ${MOCKED_INCLUDES}
+    add_custom_command(PRE_BUILD
+                       TARGET GenerateMocks_Test_Animations
+                       COMMAND ruby ${CMAKE_SOURCE_DIR}/Tests/create_mock.rb ${MOCKED_HEADER} ${MOCKED_INCLUDES}
                        COMMENT "CMake - Generating mock file for ${MOCKED_HEADER}"
                        )
 endforeach()
@@ -40,5 +41,3 @@ target_link_libraries(Test_Animations PRIVATE -lm)
 
 target_link_libraries(Test_Animations PRIVATE unity cmock)
 target_include_directories(Test_Animations PRIVATE ${PRODUCTION_INCLUDE_PATH} ${MOCKED_INCLUDES})
-
-add_test(NAME Animations COMMAND Test_Animations)

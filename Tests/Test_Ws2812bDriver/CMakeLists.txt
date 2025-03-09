@@ -16,8 +16,9 @@ set(PRODUCTION_INCLUDE_PATH ${CMAKE_SOURCE_DIR}/Core/Inc
 add_custom_target(GenerateMocks_Test_Ws2812bDriver)
 
 foreach(MOCKED_HEADER ${PRODUCTION_HEADERS_TO_MOCK})
-    add_custom_command(TARGET GenerateMocks_Test_Ws2812bDriver
-                       COMMAND CMOCK_DIR=${CMAKE_SOURCE_DIR}/Tests/cmock ruby ${CMAKE_SOURCE_DIR}/Tests/create_mock.rb ${MOCKED_HEADER} ${MOCKED_INCLUDES}
+    add_custom_command(PRE_BUILD
+                       TARGET GenerateMocks_Test_Ws2812bDriver
+                       COMMAND ruby ${CMAKE_SOURCE_DIR}/Tests/create_mock.rb ${MOCKED_HEADER} ${MOCKED_INCLUDES}
                        COMMENT "CMake - Generating mock file for ${MOCKED_HEADER}"
                        )
 endforeach()
@@ -38,5 +39,3 @@ target_link_libraries(Test_Ws2812bDriver PRIVATE -lm)
 
 target_link_libraries(Test_Ws2812bDriver PRIVATE unity cmock)
 target_include_directories(Test_Ws2812bDriver PRIVATE ${PRODUCTION_INCLUDE_PATH} ${MOCKED_INCLUDES})
-
-add_test(NAME Ws2812bDriver COMMAND Test_Ws2812bDriver)

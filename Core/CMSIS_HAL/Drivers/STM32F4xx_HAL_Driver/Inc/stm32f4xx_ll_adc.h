@@ -1877,6 +1877,7 @@ __STATIC_INLINE uint32_t LL_ADC_DMA_GetRegAddr(ADC_TypeDef *ADCx, uint32_t Regis
   return data_reg_addr;
 }
 #else
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 __STATIC_INLINE uint32_t LL_ADC_DMA_GetRegAddr(ADC_TypeDef *ADCx, uint32_t Register)
 {
   /* Retrieve address of register DR */

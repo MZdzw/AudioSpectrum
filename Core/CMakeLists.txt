@@ -33,61 +33,7 @@ set(LINKER_FLAGS --specs=nosys.specs
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32F401CCUX_FLASH.ld)
 set(EXECUTABLE ${CMAKE_PROJECT_NAME})
 
-
-set(HAL_DRIVERS 
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_adc.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pcd.h
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pcd_ex.h
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_ll_usb.h
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.c
-)
-
-set(USB_DRIVERS
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c
-    ${CMAKE_SOURCE_DIR}/USB_DEVICE/App/usbd_cdc_if.c
-    ${CMAKE_SOURCE_DIR}/USB_DEVICE/App/usbd_desc.c
-    ${CMAKE_SOURCE_DIR}/USB_DEVICE/App/usb_device.c
-    ${CMAKE_SOURCE_DIR}/USB_DEVICE/Target/usbd_conf.c
-)
-
 set(INCLUDES
-    ${CMAKE_SOURCE_DIR}/Drivers/CMSIS/Device/ST/STM32F4xx/Include/
-    ${CMAKE_SOURCE_DIR}/Drivers/CMSIS/Include/
-
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Inc/
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy/
-
-    # USB
-    ${CMAKE_SOURCE_DIR}/USB_DEVICE/App/
-    ${CMAKE_SOURCE_DIR}/USB_DEVICE/Target/
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc/
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/STM32_USB_Device_Library/Core/Inc
-    # ARM DSP
-    ${CMAKE_SOURCE_DIR}/Drivers/CMSIS/DSP/Include/
-
     ${CMAKE_CURRENT_SOURCE_DIR}/Inc/ 
 )
 
@@ -114,9 +60,6 @@ set(STM32_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/activity.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/fft.c
 
-    ${HAL_DRIVERS}
-    ${USB_DRIVERS}
-
     ${CMAKE_CURRENT_SOURCE_DIR}/Startup/startup_stm32f401ccux.s
 )
 
@@ -128,6 +71,8 @@ set(SYMBOLS
     -DARM_MATH_CM4
     -DUSE_HAL_DRIVER
 )
+
+add_subdirectory(CMSIS_HAL)
 
 add_executable(${EXECUTABLE} ${STM32_SRC})
 
@@ -156,7 +101,9 @@ target_link_options(${EXECUTABLE} PRIVATE
 )
 
 target_link_libraries(${EXECUTABLE} PRIVATE
-                      ${CMAKE_SOURCE_DIR}/Drivers/CMSIS/Lib/GCC/libarm_cortexM4lf_math.a)
+    ${CMAKE_CURRENT_SOURCE_DIR}/CMSIS_HAL/Drivers/CMSIS/Lib/GCC/libarm_cortexM4lf_math.a
+    CMSIS_HAL
+)
 
 # Execute post-build to print size
 add_custom_command(TARGET ${EXECUTABLE} POST_BUILD

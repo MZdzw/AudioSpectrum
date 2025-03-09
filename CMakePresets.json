@@ -1,8 +1,8 @@
 {
-    "version": 3,
+    "version": 8,
     "configurePresets": [
         {
-            "name": "default",
+            "name": "Base",
             "hidden": true,
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/Build/${presetName}",
@@ -11,31 +11,84 @@
             }
         },
         {
-            "name": "Debug",
-            "inherits": "default",
+            "name": "Application-Base",
+            "inherits": ["Base"],
+            "hidden": true,
+            "binaryDir": "${sourceDir}/Build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/CMake/toolchain-arm-gcc.cmake"
+            }
+        },
+        {
+            "name": "Tests-Base",
+            "inherits": ["Base"],
+            "hidden": true,
+            "binaryDir": "${sourceDir}/Build/${presetName}",
+            "cacheVariables": {
+                "BUILD_TEST": "ON"
+            },
+            "environment": {
+                "CMOCK_DIR": "${sourceDir}\\Tests\\cmock\\lib\\cmock"
+            }
+        },
+        {
+            "name": "App-Debug",
+            "inherits": "Application-Base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }
         },
         {
-            "name": "RelWithDebInfo",
-            "inherits": "default",
+            "name": "App-RelWithDebInfo",
+            "inherits": "Application-Base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo"
             }
         },
         {
-            "name": "Release",
-            "inherits": "default",
+            "name": "App-Release",
+            "inherits": "Application-Base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
         },
         {
-            "name": "MinSizeRel",
-            "inherits": "default",
+            "name": "App-MinSizeRel",
+            "inherits": "Application-Base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "MinSizeRel"
+            }
+        },
+        {
+            "name": "Tests-Debug",
+            "inherits": "Tests-Base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "BUILD_TEST": "ON"
+            }
+        },
+        {
+            "name": "Tests-RelWithDebInfo",
+            "inherits": "Tests-Base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "BUILD_TEST": "ON"
+            }
+        },
+        {
+            "name": "Tests-Release",
+            "inherits": "Tests-Base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_TEST": "ON"
+            }
+        },
+        {
+            "name": "Tests-MinSizeRel",
+            "inherits": "Tests-Base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "MinSizeRel",
+                "BUILD_TEST": "ON"
             }
         }
     ]

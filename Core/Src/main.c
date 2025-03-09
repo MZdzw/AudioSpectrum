@@ -114,11 +114,8 @@ int main(void)
   animationSpeedCnt = 0;
   ledStrip = LedStrip_initObject();
   RemoveSector(GetDriver(ledStrip), 0);
-  SetSector(GetDriver(ledStrip), 0, 0, 4);
-  SetSector(GetDriver(ledStrip), 1, 6, WS2812B_DIODES - 1);
-  SetAnimationSpeed(GetAnimations(ledStrip), 0, 5);
-  SetAnimationSpeed(GetAnimations(ledStrip), 1, 40);
-  SetAnimation(ledStrip, ROLLING_SOUND_REVERSED, 1);
+  SetSector(GetDriver(ledStrip), 0, 0, WS2812B_DIODES - 10);
+  SetAnimationSpeed(GetAnimations(ledStrip), 0, 25);
 
   usb = Communication_InitObject();
 
