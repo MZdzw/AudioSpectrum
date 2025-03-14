@@ -20,9 +20,9 @@ typedef enum Activity_e
     COLOR_OUT_OF_RANGE,
 } Activity_e;
 
-typedef Activity_e (*Activity)(LedStrip_t* leds, USBMsg_t* usbMsg);
+typedef Activity_e (*Activity)(LedStrip_t* leds, USB_t* usb);
 
-Activity_e ActivateAction(LedStrip_t* leds, USBMsg_t* usbMsg);
+Activity_e ActivateAction(LedStrip_t* leds, USB_t* usb);
 
 
 #endif

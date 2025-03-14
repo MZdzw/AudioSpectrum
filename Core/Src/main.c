@@ -69,7 +69,7 @@ uint32_t ledCounter;
 uint32_t animationSpeedCnt;
 LedStrip_t* ledStrip;
 Animation animation;
-Communication_t* usb;
+USB_t* usb;
 
 /* USER CODE END 0 */
 
@@ -117,14 +117,13 @@ int main(void)
   SetSector(GetDriver(ledStrip), 0, 0, WS2812B_DIODES - 10);
   SetAnimationSpeed(GetAnimations(ledStrip), 0, 25);
 
-  usb = Communication_InitObject();
+  usb = USB_InitObject();
 
   HAL_TIM_Base_Start_IT(&htim2);
   HAL_TIM_Base_Start(&htim3);                 // tim3 triggers adc
   HAL_TIM_Base_Start_IT(&htim4);
   InitFFT();
 
-  USBMsg_t msg;
   Activity_e action;
   
   /* USER CODE END 2 */
@@ -140,10 +139,10 @@ int main(void)
     // SendMsgUSB(usb, "jou\r\n");
     if (CheckReceiveUSB(usb))
     {
-      msg = DecodeMsg(usb);
-      if (msg.action < USB_PROPER_ACTIONS)
+      *GetUSBDecodedData(usb) = DecodeMsg(usb);
+      if (GetUSBDecodedData(usb)->action < USB_PROPER_ACTIONS)
       {
-        action = ActivateAction(ledStrip, &msg);
+        action = ActivateAction(ledStrip, usb);
       }
     }
     if (GetFFTState() == SAMPLING_DONE)

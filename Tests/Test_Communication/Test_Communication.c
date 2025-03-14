@@ -4,11 +4,11 @@
 #include "communication.h"
 #include "mock_usbInterface.h"
 
-Communication_t* usb;
+USB_t* usb;
 
 void setUp (void) /* Is run before every test, put unit init calls here. */
 {
-    usb = Communication_InitObject();
+    usb = USB_InitObject();
 }
 void tearDown (void) /* Is run after every test, put unit clean-up calls here. */
 {
@@ -37,36 +37,28 @@ static void FillRxBuffer(uint8_t* buffer, USBAction_e action)
             buffer[6] = 1;      // command ID    
             buffer[7] = 2;      // sector ID
             buffer[8] = 0;      // start diode ID
-            buffer[9] = 0;      // start diode ID
-            buffer[10] = 0;     // start diode ID
-            buffer[11] = 1;     // start diode ID (32 bits)
-            buffer[12] = 0;     // end diode ID
-            buffer[13] = 0;     // end diode ID
-            buffer[14] = 0;     // end diode ID
-            buffer[15] = 20;    // end diode ID (32 bits)
+            buffer[9] = 1;      // start diode ID (16 bits)
+            buffer[10] = 0;     // end diode ID
+            buffer[11] = 20;    // end diode ID (16 bits)
         break; 
         case USB_SET_DIODE_COLOR_HSV:
             // inject setdiode nr 4 with HSV color
             buffer[6] = 2;      // command ID    
             buffer[7] = 0;      // diode ID
-            buffer[8] = 0;      // diode ID
-            buffer[9] = 0;      // diode ID
-            buffer[10] = 4;     // diode ID (32 bits)
-            buffer[11] = 1;     // hue
-            buffer[12] = 100;   // hue (16 bits)
-            buffer[13] = 50;    // saturation
-            buffer[14] = 60;    // value
+            buffer[8] = 4;      // diode ID (16 bits)
+            buffer[9] = 1;      // hue
+            buffer[10] = 100;   // hue (16 bits)
+            buffer[11] = 50;    // saturation
+            buffer[12] = 60;    // value
         break;
         case USB_SET_DIODE_COLOR_RGB:
             // inject diode nr 4 with RGB color
             buffer[6] = 3;      // command ID    
-            buffer[7] = 1;      // diode ID
-            buffer[8] = 0;      // diode ID
-            buffer[9] = 3;      // diode ID
-            buffer[10] = 8;     // diode ID (32 bits)
-            buffer[11] = 200;   // red
-            buffer[12] = 100;   // green
-            buffer[13] = 130;   // blue
+            buffer[7] = 0;      // diode ID
+            buffer[8] = 4;      // diode ID (36 bits)
+            buffer[9] = 200;    // red
+            buffer[10] = 100;   // green
+            buffer[11] = 130;   // blue
         break;
         case USB_SET_SECTOR_COLOR_HSV:
             // inject sector nr 1 with HSV color
@@ -115,7 +107,11 @@ static void FillRxBuffer(uint8_t* buffer, USBAction_e action)
         case USB_SET_DIMMING_ENTIRE_EFFECT:
             // inject sector 4 with animation speed
             buffer[6] = 10;      // command ID    
-            buffer[7] = 4;      // sector ID
+            buffer[7] = 4;       // sector ID
+        break;
+        case USB_LED_STRIP_STATE_REQ:
+            buffer[6] = 12;       // command ID
+        break;
         default:
         break; 
     }
@@ -127,21 +123,24 @@ void Test_ObjectNotNullPtr(void)
     TEST_ASSERT_NOT_NULL(usb);
 }
 
-// Check that after object initialization all members are 0
+// Check that after object initialization all members are init to proper values
 void Test_CheckAfterInitAllMembersAreZero(void)
 {
+    // everything should be initialize to zero apart from action
     uint8_t expectedBuffer[64] = {0};
 
     TEST_ASSERT_EQUAL_UINT8_ARRAY(expectedBuffer, GetTxBufferUSB(usb), sizeof(expectedBuffer));
     TEST_ASSERT_EQUAL_UINT8_ARRAY(expectedBuffer, GetRxBufferUSB(usb), sizeof(expectedBuffer));
     TEST_ASSERT_EQUAL_UINT8(0, *GetFlagUSBPtr(usb));
     TEST_ASSERT_EQUAL_UINT32(0, GetMsgLen(usb));
+    TEST_ASSERT_EQUAL_UINT32(USB_ERROR, GetUSBDecodedData(usb)->action);
+    TEST_ASSERT_EQUAL_UINT16(0, GetUSBDecodedData(usb)->diodeID);
 }
 
 // Check decoding messages feature
 void Test_DecodingMessages(void)
 {
-    USBMsg_t msg;
+    USBDecodedData_t msg;
     uint8_t* injectedRxBuffer = GetRxBufferUSB(usb);
     InjectPreOrSufix(injectedRxBuffer, 0);
     FillRxBuffer(injectedRxBuffer, USB_REMOVE_SECTOR);
@@ -154,7 +153,7 @@ void Test_DecodingMessages(void)
 
     InjectPreOrSufix(injectedRxBuffer, 0);
     FillRxBuffer(injectedRxBuffer, USB_ADD_SECTOR);
-    InjectPreOrSufix(injectedRxBuffer, 16);
+    InjectPreOrSufix(injectedRxBuffer, 12);
     
     msg = DecodeMsg(usb);
     TEST_ASSERT_EQUAL_UINT8(USB_ADD_SECTOR, msg.action);
@@ -163,7 +162,7 @@ void Test_DecodingMessages(void)
 
     InjectPreOrSufix(injectedRxBuffer, 0);
     FillRxBuffer(injectedRxBuffer, USB_SET_DIODE_COLOR_HSV);
-    InjectPreOrSufix(injectedRxBuffer, 15);
+    InjectPreOrSufix(injectedRxBuffer, 13);
 
     msg = DecodeMsg(usb);
     TEST_ASSERT_EQUAL_UINT8(USB_SET_DIODE_COLOR_HSV, msg.action);
@@ -172,7 +171,7 @@ void Test_DecodingMessages(void)
 
     InjectPreOrSufix(injectedRxBuffer, 0);
     FillRxBuffer(injectedRxBuffer, USB_SET_DIODE_COLOR_RGB);
-    InjectPreOrSufix(injectedRxBuffer, 14);
+    InjectPreOrSufix(injectedRxBuffer, 12);
 
     msg = DecodeMsg(usb);
     TEST_ASSERT_EQUAL_UINT8(USB_SET_DIODE_COLOR_RGB, msg.action);
@@ -239,16 +238,25 @@ void Test_DecodingMessages(void)
 
     msg = DecodeMsg(usb);
     TEST_ASSERT_EQUAL_UINT8(USB_SET_DIMMING_ENTIRE_EFFECT, msg.action);
+
+    memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);
+
+    InjectPreOrSufix(injectedRxBuffer, 0);
+    FillRxBuffer(injectedRxBuffer, USB_LED_STRIP_STATE_REQ);
+    InjectPreOrSufix(injectedRxBuffer, 7);
+
+    msg = DecodeMsg(usb);
+    TEST_ASSERT_EQUAL_UINT8(USB_LED_STRIP_STATE_REQ, msg.action);
 }
 
 // Check that decode USB_SET_DIODE_COLOR_HSV and USB_SET_DIODE_COLOR_RGB works as expected
 void Test_USBSetDiodeColorHSVAndRGB(void)
 {
-    USBMsg_t msg;
+    USBDecodedData_t msg;
     uint8_t* injectedRxBuffer = GetRxBufferUSB(usb);
     InjectPreOrSufix(injectedRxBuffer, 0);
     FillRxBuffer(injectedRxBuffer, USB_SET_DIODE_COLOR_HSV);
-    InjectPreOrSufix(injectedRxBuffer, 15);
+    InjectPreOrSufix(injectedRxBuffer, 13);
     
     msg = DecodeMsg(usb);
     TEST_ASSERT_EQUAL_UINT8(USB_SET_DIODE_COLOR_HSV, msg.action);
@@ -261,11 +269,11 @@ void Test_USBSetDiodeColorHSVAndRGB(void)
 
     InjectPreOrSufix(injectedRxBuffer, 0);
     FillRxBuffer(injectedRxBuffer, USB_SET_DIODE_COLOR_RGB);
-    InjectPreOrSufix(injectedRxBuffer, 14);
+    InjectPreOrSufix(injectedRxBuffer, 12);
     
     msg = DecodeMsg(usb);
     TEST_ASSERT_EQUAL_UINT8(USB_SET_DIODE_COLOR_RGB, msg.action);
-    TEST_ASSERT_EQUAL_UINT32(16777992, msg.diodeID);
+    TEST_ASSERT_EQUAL_UINT32(4, msg.diodeID);
     TEST_ASSERT_EQUAL_UINT8(200, msg.rgbColor.red);
     TEST_ASSERT_EQUAL_UINT8(100, msg.rgbColor.green);
     TEST_ASSERT_EQUAL_UINT8(130, msg.rgbColor.blue);
@@ -274,7 +282,7 @@ void Test_USBSetDiodeColorHSVAndRGB(void)
 // Check that wrong message appendix raise error
 void Test_WrongMessageAppendix(void)
 {
-    USBMsg_t msg;
+    USBDecodedData_t msg;
     uint8_t* injectedRxBuffer = GetRxBufferUSB(usb);
     InjectPreOrSufix(injectedRxBuffer, 0);
     FillRxBuffer(injectedRxBuffer, USB_SET_DIODE_COLOR_HSV);
@@ -287,7 +295,7 @@ void Test_WrongMessageAppendix(void)
 // Check that wrong message prefix raise error
 void Test_WrongMessagePrefix(void)
 {
-    USBMsg_t msg;
+    USBDecodedData_t msg;
     uint8_t* injectedRxBuffer = GetRxBufferUSB(usb);
     InjectPreOrSufix(injectedRxBuffer, 0);
     FillRxBuffer(injectedRxBuffer, USB_SET_DIODE_COLOR_HSV);
@@ -303,7 +311,7 @@ void Test_WrongMessagePrefix(void)
 // Check that setting animations trigger good values
 void Test_CheckSettingAnimations(void)
 {
-    USBMsg_t msg;
+    USBDecodedData_t msg;
     uint8_t* injectedRxBuffer = GetRxBufferUSB(usb);
     memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);
 
@@ -322,4 +330,20 @@ void Test_CheckSettingAnimations(void)
 
     msg = DecodeMsg(usb);
     TEST_ASSERT_EQUAL_UINT8(USB_DIMMING_ENTIRE, msg.animation);
+}
+
+// Check request of led strip state
+void Test_CheckLedStripRequest(void)
+{
+    USBDecodedData_t msg;
+    uint8_t* injectedRxBuffer = GetRxBufferUSB(usb);
+    memset(injectedRxBuffer, 0, sizeof(uint8_t) * 64);
+
+    InjectPreOrSufix(injectedRxBuffer, 0);
+    FillRxBuffer(injectedRxBuffer, USB_LED_STRIP_STATE_REQ);
+    InjectPreOrSufix(injectedRxBuffer, 7);
+
+    msg = DecodeMsg(usb);
+
+    TEST_ASSERT_EQUAL_UINT8(USB_LED_STRIP_STATE_REQ, msg.action);
 }

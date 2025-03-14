@@ -95,7 +95,7 @@ uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
-static Communication_t* usb;
+static USB_t* usb;
 /* USER CODE END PRIVATE_VARIABLES */
 
 /**
@@ -157,7 +157,7 @@ static int8_t CDC_Init_FS(void)
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
 
-  usb = Communication_InitObject();
+  usb = USB_InitObject();
   return (USBD_OK);
   /* USER CODE END 3 */
 }

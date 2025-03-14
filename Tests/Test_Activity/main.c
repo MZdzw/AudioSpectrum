@@ -27,6 +27,7 @@ extern void Test_ActivitySetSectorColorRainbowSectorIdNotInUse(void);
 extern void Test_ActivitySetSectorSpawnDiode(void);
 extern void Test_ActivitySetSectorSpawnDiodeSectorIdOutOfRange(void);
 extern void Test_ActivitySetSectorSpawnDiodeSectorIdNotInUse(void);
+extern void Test_ActivitySendRespondForLedStripStateRequest(void);
 
 
 int main(void)
@@ -59,6 +60,7 @@ int main(void)
     RUN_TEST(Test_ActivitySetSectorSpawnDiode);
     RUN_TEST(Test_ActivitySetSectorSpawnDiodeSectorIdOutOfRange);
     RUN_TEST(Test_ActivitySetSectorSpawnDiodeSectorIdNotInUse);
+    RUN_TEST(Test_ActivitySendRespondForLedStripStateRequest);
 
     return UNITY_END();
 }

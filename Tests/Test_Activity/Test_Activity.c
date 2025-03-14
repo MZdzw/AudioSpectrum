@@ -14,7 +14,7 @@
 LedStrip_t* objLeds;
 Animation_t animationsArray[MAX_SECTORS];
 Ws2812b_Driver_t* objWs2812b_Driver;
-Communication_t* objCommunication;
+USB_t* objUsb;
 
 Ws2812b_Sector_t sectorsMocked[MAX_SECTORS];
 Ws2812b_Diode_t diodesMocked[WS2812B_DIODES];
@@ -24,11 +24,11 @@ void setUp (void) /* Is run before every test, put unit init calls here. */
     // Arange
     objLeds = malloc(sizeof(LedStrip_t));
     objWs2812b_Driver = malloc(sizeof(Ws2812b_Driver_t));
-    objCommunication = malloc(sizeof(Communication_t));
+    objUsb = malloc(sizeof(USB_t));
 
     LedStrip_initObject_ExpectAndReturn(objLeds);
     Ws2812b_initObject_ExpectAndReturn(objWs2812b_Driver);
-    Communication_InitObject_ExpectAndReturn(objCommunication);
+    USB_InitObject_ExpectAndReturn(objUsb);
 
     for (unsigned int i = 0; i < MAX_SECTORS; i++)
     {
@@ -55,21 +55,20 @@ void tearDown (void) /* Is run after every test, put unit clean-up calls here. *
     
     free(objLeds);
     free(objWs2812b_Driver);
-    free(objCommunication);
+    free(objUsb);
 }
 
-// check that if we dont decode message before the functions works as expected
+// check that if we don't decode message before the functions works as expected
 void Test_NoDecodeMessageBefore(void)
 {
-    USBMsg_t msg;
-    Activity_e action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_ERROR}));
+    Activity_e action = ActivateAction(objLeds, objUsb);
     TEST_ASSERT_EQUAL_UINT8(ERRORS, action);
 }
 
 // Check that if decode return ssome kind of msg, the program set proper activity
 void Test_CheckThatProperActivityIsSet(void)
 {
-    USBMsg_t msg;
     Activity_e action;
     
     sectorsMocked[0].isUsed = true;
@@ -78,23 +77,21 @@ void Test_CheckThatProperActivityIsSet(void)
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
     RemoveSector_IgnoreAndReturn(true);
 
-    DecodeMsg_ExpectAndReturn(objCommunication, (USBMsg_t){.action = USB_REMOVE_SECTOR});
-    msg = DecodeMsg(objCommunication);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_REMOVE_SECTOR}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_REMOVE_SECTOR}));
 
-    action = ActivateAction(objLeds, &msg);
+    action = ActivateAction(objLeds, objUsb);
     TEST_ASSERT_EQUAL_PTR(&ActivityRemoveSector, act);
     TEST_ASSERT_EQUAL_UINT8(OK, action);
 
     
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_ADD_SECTOR, .sectorID = 1, .diodesRange = {21, 25}}));
-    // SetSector_ExpectAndReturn(objWs2812b_Driver, 1, 21, 25, true);
-    msg = DecodeMsg(objCommunication);
-
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
     SetSector_ExpectAndReturn(objWs2812b_Driver, 1, 21, 25, true);
 
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_ADD_SECTOR, .sectorID = 1, .diodesRange = {21, 25}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_ADD_SECTOR, .sectorID = 1, .diodesRange = {21, 25}}));
+    action = ActivateAction(objLeds, objUsb);
     TEST_ASSERT_EQUAL_PTR(&ActivityAddSector, act);
     TEST_ASSERT_EQUAL_UINT8(OK, action);
 
@@ -102,49 +99,52 @@ void Test_CheckThatProperActivityIsSet(void)
     GetSectors_IgnoreAndReturn(sectorsMocked);
     GetDiodesArray_IgnoreAndReturn(diodesMocked);
     // SetDiodeColorHSV_Expect(objWs2812b_Driver, 9, 300, 100, 100);
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_DIODE_COLOR_HSV, .diodeID = 9, .hsvColor = {300, 100, 100}}));
-    msg = DecodeMsg(objCommunication);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_DIODE_COLOR_HSV, .diodeID = 9, .hsvColor = {300, 100, 100}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_DIODE_COLOR_HSV, .diodeID = 9, .hsvColor = {300, 100, 100}}));
 
-    action = ActivateAction(objLeds, &msg);
+    action = ActivateAction(objLeds, objUsb);
     TEST_ASSERT_EQUAL_PTR(&ActivitySetDiodeHSV, act);
     TEST_ASSERT_EQUAL_UINT8(DIODE_ID_NOT_IN_USED_SECTOR, action);
 
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     // SetDiodeColorRGB_Expect(objWs2812b_Driver, 9, 250, 100, 100);
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_DIODE_COLOR_RGB, .diodeID = 9, .rgbColor = {250, 100, 100}}));
-    msg = DecodeMsg(objCommunication);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_DIODE_COLOR_RGB, .diodeID = 9, .rgbColor = {250, 100, 100}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_DIODE_COLOR_RGB, .diodeID = 9, .rgbColor = {250, 100, 100}}));
 
-    action = ActivateAction(objLeds, &msg);
+    action = ActivateAction(objLeds, objUsb);
     TEST_ASSERT_EQUAL_PTR(&ActivitySetDiodeRGB, act);
     TEST_ASSERT_EQUAL_UINT8(DIODE_ID_NOT_IN_USED_SECTOR, action);
 
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
     SetHSVColorForSector_Ignore();
-    DecodeMsg_ExpectAndReturn(objCommunication, (USBMsg_t){.action = USB_SET_SECTOR_COLOR_HSV});
-    msg = DecodeMsg(objCommunication);
 
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_HSV}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_HSV}));
+
+    action = ActivateAction(objLeds, objUsb);
     TEST_ASSERT_EQUAL_PTR(&ActivitySetSectorColorHSV, act);
     TEST_ASSERT_EQUAL_UINT8(OK, action);
 
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
     SetRGBColorForSector_Ignore();
-    DecodeMsg_ExpectAndReturn(objCommunication, (USBMsg_t){.action = USB_SET_SECTOR_COLOR_RGB});
-    msg = DecodeMsg(objCommunication);
 
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_RGB}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_RGB}));
+
+    action = ActivateAction(objLeds, objUsb);
     TEST_ASSERT_EQUAL_PTR(&ActivitySetSectorColorRGB, act);
     TEST_ASSERT_EQUAL_UINT8(OK, action);
 
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
     SetRainbowForSector_Ignore();
-    DecodeMsg_ExpectAndReturn(objCommunication, (USBMsg_t){.action = USB_SET_SECTOR_COLOR_RAINBOW});
-    msg = DecodeMsg(objCommunication);
 
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_RAINBOW}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_RAINBOW}));
+
+    action = ActivateAction(objLeds, objUsb);
     TEST_ASSERT_EQUAL_PTR(&ActivitySetSectorColorRainbow, act);
     TEST_ASSERT_EQUAL_UINT8(OK, action);
 
@@ -152,10 +152,11 @@ void Test_CheckThatProperActivityIsSet(void)
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
     // GetDiodesArray_IgnoreAndReturn(diodesMocked);
     SetDiodeColorRGB_Ignore();
-    DecodeMsg_ExpectAndReturn(objCommunication, (USBMsg_t){.action = USB_SET_SECTOR_SPAWN_DIODE_COLOR});
-    msg = DecodeMsg(objCommunication);
 
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_SPAWN_DIODE_COLOR}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_SPAWN_DIODE_COLOR}));
+
+    action = ActivateAction(objLeds, objUsb);
     TEST_ASSERT_EQUAL_PTR(&ActivitySetSectorSpawnDiode, act);
     TEST_ASSERT_EQUAL_UINT8(OK, action);
 
@@ -163,10 +164,11 @@ void Test_CheckThatProperActivityIsSet(void)
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
     GetAnimations_IgnoreAndReturn(animationsArray);
     SetAnimationSpeed_Ignore();
-    DecodeMsg_ExpectAndReturn(objCommunication, (USBMsg_t){.action = USB_SET_SECTOR_ANIMATION_SPEED});
-    msg = DecodeMsg(objCommunication);
 
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_ANIMATION_SPEED}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_ANIMATION_SPEED}));
+
+    action = ActivateAction(objLeds, objUsb);
     TEST_ASSERT_EQUAL_PTR(&ActivitySetSectorAnimationSpeed, act);
     TEST_ASSERT_EQUAL_UINT8(OK, action);
 }
@@ -176,7 +178,6 @@ void Test_RemoveSector(void)
 {
     // Arange, Act, Assert
     // Arange
-    USBMsg_t msg;
     Activity_e action;
     // firstly we want to remove proper sector
     // Act
@@ -185,9 +186,9 @@ void Test_RemoveSector(void)
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
     RemoveSector_IgnoreAndReturn(true);
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_REMOVE_SECTOR, .sectorID = 0}));
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_REMOVE_SECTOR, .sectorID = 0}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_REMOVE_SECTOR, .sectorID = 0}));
+    action = ActivateAction(objLeds, objUsb);
     // Assert
     TEST_ASSERT_EQUAL_PTR(&ActivityRemoveSector, act);
     TEST_ASSERT_EQUAL_UINT8(OK, action);
@@ -197,9 +198,9 @@ void Test_RemoveSector(void)
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
     RemoveSector_IgnoreAndReturn(false);
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_REMOVE_SECTOR, .sectorID = 3}));
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_REMOVE_SECTOR, .sectorID = 3}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_REMOVE_SECTOR, .sectorID = 3}));
+    action = ActivateAction(objLeds, objUsb);
     TEST_ASSERT_EQUAL_PTR(&ActivityRemoveSector, act);
     TEST_ASSERT_EQUAL_UINT8(SECTOR_ID_NON_EXISITING, action);
 
@@ -207,9 +208,9 @@ void Test_RemoveSector(void)
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
     RemoveSector_IgnoreAndReturn(false);
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_REMOVE_SECTOR, .sectorID = MAX_SECTORS}));
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_REMOVE_SECTOR, .sectorID = MAX_SECTORS}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_REMOVE_SECTOR, .sectorID = MAX_SECTORS}));
+    action = ActivateAction(objLeds, objUsb);
     TEST_ASSERT_EQUAL_PTR(&ActivityRemoveSector, act);
     TEST_ASSERT_EQUAL_UINT8(SECTOR_ID_OUT_OF_RANGE, action);
 }
@@ -218,7 +219,6 @@ void Test_AddSector(void)
 {
     // Arange, Act, Assert
     // Arange
-    USBMsg_t msg;
     Activity_e action;
 
     // firstly we want to add sector when there is place for that
@@ -229,9 +229,9 @@ void Test_AddSector(void)
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
     SetSector_ExpectAndReturn(objWs2812b_Driver, 1, 21, 25, true);
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_ADD_SECTOR, .sectorID = 1, .diodesRange = {21, 25}}));
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_ADD_SECTOR, .sectorID = 1, .diodesRange = {21, 25}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_ADD_SECTOR, .sectorID = 1, .diodesRange = {21, 25}}));
+    action = ActivateAction(objLeds, objUsb);
 
     // Assert
     TEST_ASSERT_EQUAL_PTR(&ActivityAddSector, act);
@@ -241,16 +241,15 @@ void Test_AddSector(void)
 // Check if adding existing sector fails
 void Test_AddExisitngSector(void)
 {
-    USBMsg_t msg;
     Activity_e action;
     sectorsMocked[0].isUsed = true;
     sectorsMocked[1].isUsed = true;
 
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_ADD_SECTOR, .sectorID = 1, .diodesRange = {21, 25}}));
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_ADD_SECTOR, .sectorID = 1, .diodesRange = {21, 25}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_ADD_SECTOR, .sectorID = 1, .diodesRange = {21, 25}}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivityAddSector, act);
     TEST_ASSERT_EQUAL_UINT8(SECTOR_ID_ALREADY_EXIST, action);
@@ -259,14 +258,13 @@ void Test_AddExisitngSector(void)
 // Check adding diode out of range
 void Test_AddDiodeOutOfRange(void)
 {
-    USBMsg_t msg;
     Activity_e action;
     // we want to add diode out of range
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_ADD_SECTOR, .sectorID = 2, .diodesRange = {WS2812B_DIODES + 5, WS2812B_DIODES + 10}}));
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_ADD_SECTOR, .sectorID = 2, .diodesRange = {WS2812B_DIODES + 5, WS2812B_DIODES + 10}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_ADD_SECTOR, .sectorID = 2, .diodesRange = {WS2812B_DIODES + 5, WS2812B_DIODES + 10}}));
+    action = ActivateAction(objLeds, objUsb);
     TEST_ASSERT_EQUAL_PTR(&ActivityAddSector, act);
     TEST_ASSERT_EQUAL_UINT8(DIODE_ID_OUT_OF_RANGE, action);
 }
@@ -275,7 +273,6 @@ void Test_AddOverlappingSector(void)
 {
     // Arange, Act, Assert
     // Arange
-    USBMsg_t msg;
     Activity_e action;
 
     // firstly we want to add sector when there is place for that
@@ -286,11 +283,11 @@ void Test_AddOverlappingSector(void)
 
     // we want add sector which overlapping with other 
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_ADD_SECTOR, .sectorID = 2, .diodesRange = {15, 25}}));
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
     SetSector_ExpectAndReturn(objWs2812b_Driver, 2, 15, 25, false);
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_ADD_SECTOR, .sectorID = 2, .diodesRange = {15, 25}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_ADD_SECTOR, .sectorID = 2, .diodesRange = {15, 25}}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivityAddSector, act);
     TEST_ASSERT_EQUAL_UINT8(SECTORS_OVERLAPPING, action);
@@ -298,7 +295,6 @@ void Test_AddOverlappingSector(void)
 
 void Test_ActivitySetDiodeColorHSV(void)
 {
-    USBMsg_t msg;
     Activity_e action;
 
     sectorsMocked[0].firstDiode = diodesMocked;
@@ -314,9 +310,9 @@ void Test_ActivitySetDiodeColorHSV(void)
     GetDiodesArray_ExpectAndReturn(objWs2812b_Driver, diodesMocked);
     SetDiodeColorHSV_Expect(diodesMocked + 3, ((Ws2812b_HSV_t){200, 100, 100}));
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_DIODE_COLOR_HSV, .diodeID = 3, .hsvColor = {200, 100, 100}}));
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_DIODE_COLOR_HSV, .diodeID = 3, .hsvColor = {200, 100, 100}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_DIODE_COLOR_HSV, .diodeID = 3, .hsvColor = {200, 100, 100}}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivitySetDiodeHSV, act);
     TEST_ASSERT_EQUAL_UINT8(OK, action);
@@ -324,7 +320,6 @@ void Test_ActivitySetDiodeColorHSV(void)
 
 void Test_ActivitySetDiodeColorHSVDiodeIDOutOfRange(void)
 {
-    USBMsg_t msg;
     Activity_e action;
 
     sectorsMocked[0].isUsed = true;
@@ -332,10 +327,9 @@ void Test_ActivitySetDiodeColorHSVDiodeIDOutOfRange(void)
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetDiodesArray_ExpectAndReturn(objWs2812b_Driver, diodesMocked);
     SetDiodeColorHSV_Expect(diodesMocked + WS2812B_DIODES + 10, ((Ws2812b_HSV_t){200, 100, 100}));
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_DIODE_COLOR_HSV, .diodeID = WS2812B_DIODES + 10, .hsvColor = {200, 100, 100}}));
-
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_DIODE_COLOR_HSV, .diodeID = WS2812B_DIODES + 10, .hsvColor = {200, 100, 100}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_DIODE_COLOR_HSV, .diodeID = WS2812B_DIODES + 10, .hsvColor = {200, 100, 100}}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivitySetDiodeHSV, act);
     TEST_ASSERT_EQUAL_UINT8(DIODE_ID_OUT_OF_RANGE, action);
@@ -343,21 +337,19 @@ void Test_ActivitySetDiodeColorHSVDiodeIDOutOfRange(void)
 
 void Test_ActivitySetDiodeColorHSVValuesOutOfRange(void)
 {
-    USBMsg_t msg;
     Activity_e action;
 
     sectorsMocked[0].firstDiode = diodesMocked;
     sectorsMocked[0].lastDiode = diodesMocked + WS2812B_DIODES - 1;
     sectorsMocked[0].isUsed = true;
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_DIODE_COLOR_HSV, .diodeID = 9, .hsvColor = {400, 100, 100}}));
-
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetDiodesArray_ExpectAndReturn(objWs2812b_Driver, diodesMocked);
     SetDiodeColorHSV_Expect(diodesMocked + 9, ((Ws2812b_HSV_t){400, 100, 100}));
 
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_DIODE_COLOR_HSV, .diodeID = 9, .hsvColor = {400, 100, 100}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_DIODE_COLOR_HSV, .diodeID = 9, .hsvColor = {400, 100, 100}}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivitySetDiodeHSV, act);
     TEST_ASSERT_EQUAL_UINT8(COLOR_OUT_OF_RANGE, action);
@@ -365,7 +357,6 @@ void Test_ActivitySetDiodeColorHSVValuesOutOfRange(void)
 
 void Test_ActivitySetDiodeColorHSVInNotUsedSector(void)
 {
-    USBMsg_t msg;
     Activity_e action;
 
     sectorsMocked[0].firstDiode = diodesMocked;
@@ -375,13 +366,12 @@ void Test_ActivitySetDiodeColorHSVInNotUsedSector(void)
     sectorsMocked[1].lastDiode = diodesMocked + 22;
     sectorsMocked[1].isUsed = true;
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_DIODE_COLOR_HSV, .diodeID = 25, .hsvColor = {20, 100, 100}}));
-
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
 
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_DIODE_COLOR_HSV, .diodeID = 25, .hsvColor = {20, 100, 100}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_DIODE_COLOR_HSV, .diodeID = 25, .hsvColor = {20, 100, 100}}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivitySetDiodeHSV, act);
     TEST_ASSERT_EQUAL_UINT8(DIODE_ID_NOT_IN_USED_SECTOR, action);
@@ -389,19 +379,18 @@ void Test_ActivitySetDiodeColorHSVInNotUsedSector(void)
 
 void Test_ActivitySetDiodeColorRGB(void)
 {
-    USBMsg_t msg;
     Activity_e action;
 
     sectorsMocked[0].isUsed = true;
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_DIODE_COLOR_RGB, .diodeID = 9, .rgbColor = {200, 100, 100}}));
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetDiodesArray_ExpectAndReturn(objWs2812b_Driver, diodesMocked);
     GetDiodesArray_ExpectAndReturn(objWs2812b_Driver, diodesMocked);
     SetDiodeColorRGB_Expect(diodesMocked + 9, ((Ws2812b_RGB_t){200, 100, 100}));
     
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_DIODE_COLOR_RGB, .diodeID = 9, .hsvColor = {200, 100, 100}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_DIODE_COLOR_RGB, .diodeID = 9, .hsvColor = {200, 100, 100}}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivitySetDiodeRGB, act);
     TEST_ASSERT_EQUAL_UINT8(OK, action);
@@ -409,16 +398,15 @@ void Test_ActivitySetDiodeColorRGB(void)
 
 void Test_ActivitySetDiodeColorRGBDiodeIDOutOfRange(void)
 {
-    USBMsg_t msg;
     Activity_e action;
 
     sectorsMocked[0].isUsed = true;
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_DIODE_COLOR_RGB, .diodeID = WS2812B_DIODES + 10, .hsvColor = {200, 100, 100}}));
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
 
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_DIODE_COLOR_RGB, .diodeID = WS2812B_DIODES + 10, .hsvColor = {200, 100, 100}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_DIODE_COLOR_RGB, .diodeID = WS2812B_DIODES + 10, .hsvColor = {200, 100, 100}}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivitySetDiodeRGB, act);
     TEST_ASSERT_EQUAL_UINT8(DIODE_ID_OUT_OF_RANGE, action);
@@ -426,18 +414,17 @@ void Test_ActivitySetDiodeColorRGBDiodeIDOutOfRange(void)
 
 void Test_ActivitySetDiodeColorRGBInNotUsedSector(void)
 {
-    USBMsg_t msg;
     Activity_e action;
 
     sectorsMocked[0].isUsed = true;
     sectorsMocked[1].isUsed = true;
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_DIODE_COLOR_RGB, .diodeID = 28, .rgbColor = {100, 100, 100}}));
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
 
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_DIODE_COLOR_RGB, .diodeID = 28, .hsvColor = {200, 100, 100}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_DIODE_COLOR_RGB, .diodeID = 28, .hsvColor = {200, 100, 100}}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivitySetDiodeRGB, act);
     TEST_ASSERT_EQUAL_UINT8(DIODE_ID_NOT_IN_USED_SECTOR, action);
@@ -445,18 +432,18 @@ void Test_ActivitySetDiodeColorRGBInNotUsedSector(void)
 
 void Test_ActivitySetSectorColorHSV(void)
 {
-    USBMsg_t msg;
     Activity_e action;
 
     sectorsMocked[0].isUsed = true;
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_HSV, .sectorID = 0, .hsvColor = {200, 100, 100}}));
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
     GetDiodesArray_ExpectAndReturn(objWs2812b_Driver, diodesMocked);
     SetDiodeColorHSV_Expect(diodesMocked, ((Ws2812b_HSV_t){200, 100, 100}));
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_HSV, .sectorID = 0, .hsvColor = {200, 100, 100}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_HSV, .sectorID = 0, .hsvColor = {200, 100, 100}}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivitySetSectorColorHSV, act);
     TEST_ASSERT_EQUAL_UINT8(OK, action);
@@ -464,16 +451,15 @@ void Test_ActivitySetSectorColorHSV(void)
 
 void Test_ActivitySetSectorColorHSVSectorIDOutOfRange(void)
 {
-    USBMsg_t msg;
     Activity_e action;
 
     sectorsMocked[0].isUsed = true;
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_HSV, .sectorID = MAX_SECTORS + 3, .hsvColor = {200, 100, 100}}));
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_HSV, .sectorID = MAX_SECTORS + 3, .hsvColor = {200, 100, 100}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_HSV, .sectorID = MAX_SECTORS + 3, .hsvColor = {200, 100, 100}}));
+    action = ActivateAction(objLeds, objUsb);
     
     TEST_ASSERT_EQUAL_PTR(&ActivitySetSectorColorHSV, act);
     TEST_ASSERT_EQUAL_UINT8(SECTOR_ID_OUT_OF_RANGE, action);
@@ -481,19 +467,18 @@ void Test_ActivitySetSectorColorHSVSectorIDOutOfRange(void)
 
 void Test_ActivitySetSectorColorHSVValuesOutOfRange(void)
 {
-    USBMsg_t msg;
     Activity_e action;
 
     sectorsMocked[0].isUsed = true;
     sectorsMocked[1].isUsed = true;
     sectorsMocked[2].isUsed = true;
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_HSV, .sectorID = 2, .hsvColor = {400, 100, 100}}));
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
    
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_HSV, .sectorID = 2, .hsvColor = {400, 100, 100}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_HSV, .sectorID = 2, .hsvColor = {400, 100, 100}}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivitySetSectorColorHSV, act);
     TEST_ASSERT_EQUAL_UINT8(COLOR_OUT_OF_RANGE, action);
@@ -501,19 +486,18 @@ void Test_ActivitySetSectorColorHSVValuesOutOfRange(void)
 
 void Test_ActivitySetSectorColorHSVInNotUsedSector(void)
 {
-    USBMsg_t msg;
     Activity_e action;
 
     sectorsMocked[0].isUsed = true;
     sectorsMocked[1].isUsed = true;
     sectorsMocked[2].isUsed = true;
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_HSV, .sectorID = 3, .hsvColor = {250, 100, 100}}));
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
    
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_HSV, .sectorID = 3, .hsvColor = {250, 100, 100}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_HSV, .sectorID = 3, .hsvColor = {250, 100, 100}}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivitySetSectorColorHSV, act);
     TEST_ASSERT_EQUAL_UINT8(SECTOR_ID_NOT_USED, action);
@@ -521,18 +505,17 @@ void Test_ActivitySetSectorColorHSVInNotUsedSector(void)
 
 void Test_ActivitySetSectorColorRGB(void)
 {
-    USBMsg_t msg;
     Activity_e action;
 
     sectorsMocked[0].isUsed = true;
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_RGB, .sectorID = 0, .rgbColor = {200, 100, 100}}));
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
     GetDiodesArray_ExpectAndReturn(objWs2812b_Driver, diodesMocked);
     SetDiodeColorHSV_Expect(diodesMocked, ((Ws2812b_HSV_t){200, 100, 100}));
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_RGB, .sectorID = 0, .rgbColor = {200, 100, 100}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_RGB, .sectorID = 0, .rgbColor = {200, 100, 100}}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivitySetSectorColorRGB, act);
     TEST_ASSERT_EQUAL_UINT8(OK, action);
@@ -540,16 +523,15 @@ void Test_ActivitySetSectorColorRGB(void)
 
 void Test_ActivitySetSectorColorRGBSectorIDOutOfRange(void)
 {
-    USBMsg_t msg;
     Activity_e action;
 
     sectorsMocked[0].isUsed = true;
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_RGB, .sectorID = MAX_SECTORS + 3, .rgbColor = {200, 100, 100}}));
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_RGB, .sectorID = MAX_SECTORS + 3, .rgbColor = {200, 100, 100}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_RGB, .sectorID = MAX_SECTORS + 3, .rgbColor = {200, 100, 100}}));
+    action = ActivateAction(objLeds, objUsb);
     
     TEST_ASSERT_EQUAL_PTR(&ActivitySetSectorColorRGB, act);
     TEST_ASSERT_EQUAL_UINT8(SECTOR_ID_OUT_OF_RANGE, action);
@@ -557,19 +539,18 @@ void Test_ActivitySetSectorColorRGBSectorIDOutOfRange(void)
 
 void Test_ActivitySetSectorColorRGBInNotUsedSector(void)
 {
-    USBMsg_t msg;
     Activity_e action;
     
     sectorsMocked[0].isUsed = true;
     sectorsMocked[1].isUsed = true;
     sectorsMocked[2].isUsed = true;
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_RGB, .sectorID = 3, .rgbColor = {250, 100, 100}}));
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
    
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_RGB, .sectorID = 3, .rgbColor = {250, 100, 100}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_RGB, .sectorID = 3, .rgbColor = {250, 100, 100}}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivitySetSectorColorRGB, act);
     TEST_ASSERT_EQUAL_UINT8(SECTOR_ID_NOT_USED, action);
@@ -577,18 +558,17 @@ void Test_ActivitySetSectorColorRGBInNotUsedSector(void)
 
 void Test_ActivitySetSectorColorRainbow(void)
 {
-    USBMsg_t msg;
     Activity_e action;
     
     sectorsMocked[0].isUsed = true;
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_RAINBOW, .sectorID = 0}));
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
     SetRainbowForSector_Expect(objWs2812b_Driver, 0);
    
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_RAINBOW, .sectorID = 0}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_RAINBOW, .sectorID = 0}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivitySetSectorColorRainbow, act);
     TEST_ASSERT_EQUAL_UINT8(OK, action);
@@ -596,16 +576,15 @@ void Test_ActivitySetSectorColorRainbow(void)
 
 void Test_ActivitySetSectorColorRainbowSectorIdOutOfRange(void)
 {
-    USBMsg_t msg;
     Activity_e action;
     
     sectorsMocked[0].isUsed = true;
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_RAINBOW, .sectorID = 7}));
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
    
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_RAINBOW, .sectorID = 7}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_RAINBOW, .sectorID = 7}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivitySetSectorColorRainbow, act);
     TEST_ASSERT_EQUAL_UINT8(SECTOR_ID_OUT_OF_RANGE, action);
@@ -613,18 +592,17 @@ void Test_ActivitySetSectorColorRainbowSectorIdOutOfRange(void)
 
 void Test_ActivitySetSectorColorRainbowSectorIdNotInUse(void)
 {
-    USBMsg_t msg;
     Activity_e action;
     
     sectorsMocked[0].isUsed = true;
     sectorsMocked[1].isUsed = true;
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_COLOR_RAINBOW, .sectorID = 2}));
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
    
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_RAINBOW, .sectorID = 2}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_COLOR_RAINBOW, .sectorID = 2}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivitySetSectorColorRainbow, act);
     TEST_ASSERT_EQUAL_UINT8(SECTOR_ID_NOT_USED, action);
@@ -632,22 +610,21 @@ void Test_ActivitySetSectorColorRainbowSectorIdNotInUse(void)
 
 void Test_ActivitySetSectorSpawnDiode(void)
 {
-    USBMsg_t msg;
     Activity_e action;
     
     sectorsMocked[0].firstDiode = diodesMocked;
     sectorsMocked[0].lastDiode = diodesMocked + 10;
     sectorsMocked[0].isUsed = true;
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_SPAWN_DIODE_COLOR, .sectorID = 0, .rgbColor = {200, 120, 60}}));
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
     
     GetDiodesArray_ExpectAndReturn(objWs2812b_Driver, diodesMocked);
     SetDiodeColorRGB_Expect(diodesMocked, ((Ws2812b_RGB_t){200, 120, 60}));
    
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_SPAWN_DIODE_COLOR, .sectorID = 0, .rgbColor = {200, 120, 60}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_SPAWN_DIODE_COLOR, .sectorID = 0, .rgbColor = {200, 120, 60}}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivitySetSectorSpawnDiode, act);
     TEST_ASSERT_EQUAL_UINT8(OK, action);
@@ -655,16 +632,15 @@ void Test_ActivitySetSectorSpawnDiode(void)
 
 void Test_ActivitySetSectorSpawnDiodeSectorIdOutOfRange(void)
 {
-    USBMsg_t msg;
     Activity_e action;
     
     sectorsMocked[0].isUsed = true;
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_SPAWN_DIODE_COLOR, .sectorID = MAX_SECTORS, .rgbColor = {200, 120, 60}}));
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
    
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_SPAWN_DIODE_COLOR, .sectorID = MAX_SECTORS, .rgbColor = {200, 120, 60}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_SPAWN_DIODE_COLOR, .sectorID = MAX_SECTORS, .rgbColor = {200, 120, 60}}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivitySetSectorSpawnDiode, act);
     TEST_ASSERT_EQUAL_UINT8(SECTOR_ID_OUT_OF_RANGE, action);
@@ -672,19 +648,53 @@ void Test_ActivitySetSectorSpawnDiodeSectorIdOutOfRange(void)
 
 void Test_ActivitySetSectorSpawnDiodeSectorIdNotInUse(void)
 {
-    USBMsg_t msg;
     Activity_e action;
     
     sectorsMocked[0].isUsed = true;
     sectorsMocked[1].isUsed = true;
 
-    DecodeMsg_ExpectAndReturn(objCommunication, ((USBMsg_t){.action = USB_SET_SECTOR_SPAWN_DIODE_COLOR, .sectorID = 2, .rgbColor = {200, 120, 60}}));
     GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
     GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
    
-    msg = DecodeMsg(objCommunication);
-    action = ActivateAction(objLeds, &msg);
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_SPAWN_DIODE_COLOR, .sectorID = 2, .rgbColor = {200, 120, 60}}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_SET_SECTOR_SPAWN_DIODE_COLOR, .sectorID = 2, .rgbColor = {200, 120, 60}}));
+    action = ActivateAction(objLeds, objUsb);
 
     TEST_ASSERT_EQUAL_PTR(&ActivitySetSectorSpawnDiode, act);
     TEST_ASSERT_EQUAL_UINT8(SECTOR_ID_NOT_USED, action);
+}
+
+void Test_ActivitySendRespondForLedStripStateRequest(void)
+{
+    Activity_e action;
+
+    sectorsMocked[0].firstDiode = diodesMocked;
+    sectorsMocked[0].lastDiode = diodesMocked + WS2812B_DIODES - 1;
+    sectorsMocked[0].isUsed = true;
+
+    diodesMocked[0].diodeColor.hsv.hue = 100;
+    diodesMocked[0].diodeColor.hsv.saturation = 40;
+    diodesMocked[0].diodeColor.hsv.value = 10;
+
+    GetDriver_ExpectAndReturn(objLeds, objWs2812b_Driver);
+    GetSectors_ExpectAndReturn(objWs2812b_Driver, sectorsMocked);
+
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_LED_STRIP_STATE_REQ}));
+    GetUSBDecodedData_ExpectAndReturn(objUsb, &((USBDecodedData_t){.action = USB_LED_STRIP_STATE_REQ}));
+
+    GetDiodesArray_ExpectAndReturn(objWs2812b_Driver, diodesMocked);
+
+    uint8_t respond[WS2812B_DIODES * 4 + 12];
+    GetTxBufferUSB_ExpectAndReturn(objUsb, respond);
+    SendMsgUSB_Expect(objUsb, WS2812B_DIODES * 4 + 12);
+    action = ActivateAction(objLeds, objUsb);
+
+    TEST_ASSERT_EQUAL_PTR(&ActivityRespondOnLedStripRequest, act);
+    TEST_ASSERT_EACH_EQUAL_UINT8(0xAA, respond, 6);
+    TEST_ASSERT_EACH_EQUAL_UINT8(0, respond + 6, 1);
+    TEST_ASSERT_EACH_EQUAL_UINT8(100, respond + 7, 1);
+    TEST_ASSERT_EACH_EQUAL_UINT8(40, respond + 8, 1);
+    TEST_ASSERT_EACH_EQUAL_UINT8(10, respond + 9, 1);
+    TEST_ASSERT_EACH_EQUAL_UINT8(0xAA, respond + WS2812B_DIODES * 4 + 6, 6);
+
 }

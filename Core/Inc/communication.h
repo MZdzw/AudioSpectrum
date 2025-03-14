@@ -3,15 +3,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define MAX_LENGTH 22
 #define UINT8_t_MAX 255
 
 typedef enum USBAction_e
 {
     USB_REMOVE_SECTOR,                    // 14 length
-    USB_ADD_SECTOR,                       // 22 length
-    USB_SET_DIODE_COLOR_HSV,              // 21 length    
-    USB_SET_DIODE_COLOR_RGB,              // 20 length
+    USB_ADD_SECTOR,                       // 18 length
+    USB_SET_DIODE_COLOR_HSV,              // 19 length
+    USB_SET_DIODE_COLOR_RGB,              // 18 length
     USB_SET_SECTOR_COLOR_HSV,             // 18 length
     USB_SET_SECTOR_COLOR_RGB,             // 17 length
     USB_SET_SECTOR_COLOR_RAINBOW,         // 14 length
@@ -20,6 +19,7 @@ typedef enum USBAction_e
     USB_SET_ROLLING_EFFECT,               // 14 length
     USB_SET_DIMMING_ENTIRE_EFFECT,        // 14 length
     USB_SET_NO_ANIMATION_EFFECT,          // 14 length
+    USB_LED_STRIP_STATE_REQ,              // 13 length
     // Put new mesages here
 
     USB_PROPER_ACTIONS,
@@ -52,17 +52,17 @@ typedef struct USBHSV_t
 
 typedef struct USBDiodes_t
 {
-    uint32_t startDiode;
-    uint32_t endDiode;
+    uint16_t startDiode;
+    uint16_t endDiode;
 } USBDiodes_t;
 
-typedef struct USBMsg_t
+typedef struct USBDecodedData_t
 {
     USBAction_e action;
     union 
     {
         uint8_t sectorID;
-        uint32_t diodeID;
+        uint16_t diodeID;
     };
     union 
     {
@@ -72,28 +72,30 @@ typedef struct USBMsg_t
         USBAnimation_e animation;
     };
     USBDiodes_t diodesRange;
-} USBMsg_t;
+} USBDecodedData_t;
 
 #ifndef TESTING
-typedef struct Communication_t Communication_t;
+typedef struct USB_t USB_t;
 #else
-typedef struct Communication_t
+typedef struct USB_t
 {
-    uint8_t bufferTX[64];
-    uint8_t bufferRX[64];
+    uint8_t bufferTX[256];
+    uint8_t bufferRX[256];
     uint8_t flagUSB;
     uint32_t msgLen;
-} Communication_t;
+    USBDecodedData_t decodedData;
+} USB_t;
 #endif
 
-Communication_t* Communication_InitObject(void);
+USB_t* USB_InitObject(void);
 
-uint8_t* GetTxBufferUSB(Communication_t* this);
-uint8_t* GetRxBufferUSB(Communication_t* this);
-uint8_t* GetFlagUSBPtr(Communication_t* this);
-uint32_t GetMsgLen(Communication_t* this);
-void SendMsgUSB(Communication_t* this, const char* msg);
-bool CheckReceiveUSB(Communication_t* this);
-USBMsg_t DecodeMsg(Communication_t* this);
+uint8_t* GetTxBufferUSB(USB_t* this);
+uint8_t* GetRxBufferUSB(USB_t* this);
+uint8_t* GetFlagUSBPtr(USB_t* this);
+uint32_t GetMsgLen(USB_t* this);
+USBDecodedData_t* GetUSBDecodedData(USB_t* this);
+void SendMsgUSB(USB_t* this, const uint16_t length);
+bool CheckReceiveUSB(USB_t* this);
+USBDecodedData_t DecodeMsg(USB_t* this);
 
 #endif

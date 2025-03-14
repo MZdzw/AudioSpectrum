@@ -7,6 +7,7 @@ extern void Test_USBSetDiodeColorHSVAndRGB(void);
 extern void Test_WrongMessageAppendix(void);
 extern void Test_WrongMessagePrefix(void);
 extern void Test_CheckSettingAnimations(void);
+extern void Test_CheckLedStripRequest(void);
 
 int main(void)
 {
@@ -18,6 +19,7 @@ int main(void)
     RUN_TEST(Test_WrongMessageAppendix);
     RUN_TEST(Test_WrongMessagePrefix);
     RUN_TEST(Test_CheckSettingAnimations);
+    RUN_TEST(Test_CheckLedStripRequest);
 
     return UNITY_END();
 }
